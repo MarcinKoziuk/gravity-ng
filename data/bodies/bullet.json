@@ -1,0 +1,22 @@
+{
+    "name" : "bullet",
+    "fixtures" : [
+        {
+            "density" : 1,
+            "friction" : false,
+            "is-sensor" : false,
+            "restitution": 0,
+            "shapes" : [
+                {
+                    "type" : "triangle",
+                    "vertices" : [
+                        [0, 0.6],
+                        [-0.06, -0.06],
+                        [0.06, -0.06]
+                    ]
+                }
+            ]
+        }
+
+    ]
+}

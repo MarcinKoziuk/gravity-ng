@@ -1,0 +1,8 @@
+{
+    "name" : "ship",
+    "components" : {
+        "physics" : {
+            "body-ref": "ship"     
+        }
+    }
+}
