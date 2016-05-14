@@ -16,17 +16,17 @@
 
 #include <poly2tri.h>
 
-#include "gravity/logging.hpp"
+#include "gravity/game/logging.hpp"
 #include "gravity/game/entity.hpp"
+#include "gravity/game/resource/resourcemanager.hpp"
 #include "gravity/game/component/physics.hpp"
 #include "gravity/cgame/display.hpp"
+#include "gravity/cgame/renderer/glrenderer.hpp"
+#include "gravity/cgame/renderer/sdlrenderer.hpp"
 
 namespace Gravity {
-namespace CGame {
 
-using namespace Game;
-
-Display::Display(Game::ResourceManager& resourceManager)
+Display::Display(ResourceManager& resourceManager)
     : resourceManager(resourceManager)
 {}
 
@@ -48,8 +48,9 @@ bool Display::Init()
 
     window = SDL_CreateWindow("Window caption",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        640, 480,
-        SDL_WINDOW_OPENGL);
+        1280, 800,
+		SDL_WINDOW_RESIZABLE);
+
 
     if (window == NULL) {
         LOG(fatal) << "SDL Window creation failed: " << SDL_GetError();
@@ -62,10 +63,10 @@ bool Display::Init()
         return false;
     }
 
-    renderer = new Renderer::GLRenderer(window, sdlRenderer, resourceManager);
+    renderer = new Renderer::SDLRenderer(window, sdlRenderer, resourceManager);
 
     if (!renderer->Init()) {
-        LOG(fatal) << "GL Renderer initialization failed.";
+        LOG(fatal) << "Renderer initialization failed.";
         return false;
     }
 
@@ -75,6 +76,7 @@ bool Display::Init()
 
 void Display::Clear()
 {
+    SDL_RenderClear(sdlRenderer);
     renderer->Clear();
 }
 
@@ -146,7 +148,13 @@ void Display::DrawEntity(const Entity& entity)
 void Display::Present()
 {
     renderer->Present();
+
+    /*SDL_SetRenderDrawColor(sdlRenderer, 255, 0, 0, 1.0);
+    SDL_RenderDrawLine(sdlRenderer, 10, 10, 40, 40);*/
+
+    SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 1.0);
+
+    SDL_RenderPresent(sdlRenderer);
 }
 
-} // namespace CGame
 } // namespace Gravity

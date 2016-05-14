@@ -19,9 +19,8 @@
 #include "gravity/game/resource/resource.hpp"
 
 namespace Gravity {
-namespace CGame {
 
-class ShaderSource : public Game::Resource {
+class ShaderSource : public Resource {
 private:
     bool isLoaded;
     std::vector<char> source;
@@ -45,7 +44,6 @@ public:
 
 typedef boost::shared_ptr<ShaderSource> ShaderSourcePtr;
 
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_RESOURCE_SHADERSOURCE_HPP */

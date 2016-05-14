@@ -19,7 +19,6 @@
 #include "gravity/game/entity.hpp"
 
 namespace Gravity {
-namespace CGame {
 
 class ITriangulator : private boost::noncopyable {
 public:
@@ -30,7 +29,6 @@ public:
     virtual std::vector<glm::vec2>& GetTriangles(const Game::Entity *entity, const std::string& layer) = 0;
 };
 
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_TRIANGULATOR_ITRIANGULATOR_HPP */

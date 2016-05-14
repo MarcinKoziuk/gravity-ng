@@ -22,7 +22,6 @@
 #include "gravity/game/component/icomponent.hpp"
 
 namespace Gravity {
-namespace Game {
 namespace Component {
 
 class Physics : public IComponent {
@@ -42,7 +41,6 @@ public:
 };
 
 } // namespace Component
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_COMPONENT_PHYSICS_HPP */

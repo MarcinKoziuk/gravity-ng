@@ -10,14 +10,11 @@
 #include <vector>
 #include <string>
 
-#include "gravity/logging.hpp"
+#include "gravity/game/logging.hpp"
 #include "gravity/game/resource/resourceloader.hpp"
 #include "gravity/cgame/resource/shadersource.hpp"
 
 namespace Gravity {
-namespace CGame {
-
-using namespace Game;
 
 ShaderSource::ShaderSource(const std::string& key, const std::string& group)
     : Resource(key, group)
@@ -69,5 +66,4 @@ const std::vector<char>& ShaderSource::GetSource()
     return source;
 }
 
-} // namespace CGame
 } // namespace Gravity

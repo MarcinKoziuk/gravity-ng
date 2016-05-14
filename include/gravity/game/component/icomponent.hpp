@@ -15,14 +15,12 @@
 #include "gravity/game/entity.hpp"
 
 namespace Gravity {
-namespace Game {
 
 class IComponent {
 public:
     virtual ~IComponent() {}
 };
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_COMPONENT_ICOMPONENT_HPP */

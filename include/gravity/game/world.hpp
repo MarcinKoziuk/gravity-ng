@@ -18,7 +18,6 @@
 #include "gravity/game/entity.hpp"
 
 namespace Gravity {
-namespace Game {
 
 class World {
 private:
@@ -36,7 +35,6 @@ public:
     { return entities; }
 };
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_WORLD_HPP */

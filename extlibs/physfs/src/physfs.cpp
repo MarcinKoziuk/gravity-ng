@@ -115,6 +115,9 @@ PhysFS::size_t base_fstream::length() {
 ifstream::ifstream(const string& filename)
 	: base_fstream(PHYSFS_openRead(filename.c_str())), std::istream(new fbuf(file)) {}
 
+ifstream::ifstream(PHYSFS_File* file)
+	: base_fstream(file), std::istream(new fbuf(file)) {}
+
 ifstream::~ifstream() {
 	delete rdbuf();
 }

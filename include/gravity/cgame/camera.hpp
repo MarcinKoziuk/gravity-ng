@@ -11,7 +11,6 @@
 #include <glm/glm.hpp>
 
 namespace Gravity {
-namespace CGame {
 
 class Camera {
 public:
@@ -27,7 +26,6 @@ private:
     glm::vec2 cameraPos;
 };
 
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_CAMERA_HPP */

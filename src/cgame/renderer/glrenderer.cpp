@@ -13,21 +13,24 @@
 
 #include <glm/glm.hpp>
 
+#ifdef _WIN32
+    #include "gravity/windows.hpp"
+#endif
+
 #include <GL/glew.h>
+#include <GL/gl.h>
 
 #include <SDL2/SDL.h>
 
+#include "gravity/game/logging.hpp"
 #include "gravity/cgame/resource/shadersource.hpp"
 #include "gravity/cgame/display.hpp"
 #include "gravity/cgame/renderer/glrenderer.hpp"
 
 namespace Gravity {
-namespace CGame {
 namespace Renderer {
 
-using namespace Game;
-
-GLRenderer::GLRenderer(SDL_Window* window, SDL_Renderer* sdlRenderer, Game::ResourceManager& resourceManager)
+GLRenderer::GLRenderer(SDL_Window* window, SDL_Renderer* sdlRenderer, ResourceManager& resourceManager)
     : resourceManager(resourceManager)
     , window(window)
     , sdlRenderer(sdlRenderer)
@@ -126,7 +129,7 @@ bool GLRenderer::Init()
 
 void GLRenderer::Clear()
 {
-    SDL_RenderClear(sdlRenderer);
+    //SDL_RenderClear(sdlRenderer);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -134,7 +137,7 @@ void GLRenderer::Clear()
 
 void GLRenderer::Present()
 {
-    SDL_RenderPresent(sdlRenderer);
+    //SDL_RenderPresent(sdlRenderer);
 }
 
 void GLRenderer::LoadTriangleProgram()
@@ -180,5 +183,4 @@ void GLRenderer::DrawTriangles(const std::vector<glm::vec2>& vertices)
 }
 
 } // namespace Renderer
-} // namespace CGame
 } // namespace Gravity

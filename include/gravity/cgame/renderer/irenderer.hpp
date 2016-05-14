@@ -10,25 +10,31 @@
 #ifndef GRAVITY_CGAME_RENDERER_IRENDERER_HPP
 #define GRAVITY_CGAME_RENDERER_IRENDERER_HPP
 
+#include <vector>
+
 #include <boost/noncopyable.hpp>
 
+#include <glm/vec2.hpp>
+
 namespace Gravity {
-namespace CGame {
 namespace Renderer {
 
 class IRenderer : private boost::noncopyable {
 public:
-    virtual void Clear();
+    virtual bool Init() = 0;
 
-    virtual void Present();
+    virtual void Clear() = 0;
 
-    virtual void DrawLine() = 0;
+    virtual void Present() = 0;
 
-    virtual ~IRenderer() = 0;
+    //virtual void DrawLine() = 0;
+
+    virtual void DrawTriangles(const std::vector<glm::vec2>& vertices) = 0;
+
+    virtual ~IRenderer() {}
 };
 
 } // namespace Renderer
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_RENDERER_IRENDERER_HPP */

@@ -16,11 +16,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 
-#include "gravity/logging.hpp"
 #include "gravity/game/resource/resource.hpp"
 
 namespace Gravity {
-namespace Game {
 
 class ResourceManager {
 private:
@@ -49,7 +47,6 @@ public:
 
 #include "inline/resourcemanager.inl"
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_RESOURCE_RESOURCEMANAGER_HPP */

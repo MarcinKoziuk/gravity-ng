@@ -10,7 +10,6 @@
 #include "gravity/cgame/camera.hpp"
 
 namespace Gravity {
-namespace CGame {
 
 Camera::Camera(const glm::vec2& size, const glm::vec2& entityPos)
     : size(size)
@@ -33,7 +32,6 @@ void Camera::Update(const glm::vec2& entityPos)
         cameraPos.y += (maxVerticalOffs - verticalOffs);
     if (verticalOffs < -maxVerticalOffs)
         cameraPos.y -= (maxVerticalOffs + verticalOffs);
-
     this->entityPos = entityPos;
 }
 
@@ -42,5 +40,4 @@ const glm::vec2& Camera::GetPos() const
     return cameraPos;
 }
 
-} // namespace CGame
 } // namespace Gravity

@@ -24,12 +24,11 @@
 
 #include <Box2D/Box2D.h>
 
-#include "gravity/logging.hpp"
+#include "gravity/game/logging.hpp"
 #include "gravity/game/resource/resourceloader.hpp"
 #include "gravity/game/resource/body.hpp"
 
 namespace Gravity {
-namespace Game {
 
 Body::Body(const std::string& key, const std::string& group)
     : Resource(key, group)
@@ -169,5 +168,4 @@ const std::vector<b2FixtureDef>& Body::GetFixtureDefs()
     return fixtureDefs;
 }
 
-} // namespace Game
 } // namespace Gravity

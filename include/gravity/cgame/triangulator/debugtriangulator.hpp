@@ -15,7 +15,6 @@
 #include "gravity/cgame/triangulator/itriangulator.hpp"
 
 namespace Gravity {
-namespace CGame {
 
 class DebugTriangulator : public ITriangulator {
 public:
@@ -27,7 +26,6 @@ public:
 };
 
 
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_TRIANGULATOR_DEBUGTRIANGULATOR_HPP */

@@ -61,6 +61,7 @@ public:
 class ifstream : public base_fstream, public std::istream {
 public:
 	ifstream(string const & filename);
+	ifstream(PHYSFS_File* file);
 	virtual ~ifstream();
 };
 

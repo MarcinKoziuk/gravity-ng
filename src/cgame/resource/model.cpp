@@ -18,14 +18,12 @@
 #include <jsoncpp/json/json.h>
 #endif
 
-#include "gravity/logging.hpp"
+#include "gravity/game/logging.hpp"
 #include "gravity/game/resource/resourceloader.hpp"
 #include "gravity/cgame/resource/model.hpp"
 
 namespace Gravity {
-namespace CGame {
 
-using namespace Game;
 using boost::optional;
 
 Model::Model(const std::string& key, const std::string& group)
@@ -139,5 +137,4 @@ const std::vector<Model::Object*>& Model::GetObjects()
     return objects;
 }
 
-} // namespace CGame
 } // namespace Gravity

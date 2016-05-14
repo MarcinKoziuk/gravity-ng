@@ -19,9 +19,8 @@
 #include "gravity/game/resource/resource.hpp"
 
 namespace Gravity {
-namespace CGame {
 
-class Model : public Game::Resource {
+class Model : public Resource {
 public:
     enum Type { LINES, CIRCLE };
     struct Object {
@@ -53,7 +52,6 @@ public:
 
 typedef boost::shared_ptr<Model> ModelPtr;
 
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_RESOURCE_MODEL_HPP */

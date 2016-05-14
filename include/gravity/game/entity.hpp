@@ -17,7 +17,6 @@
 #include "gravity/game/component/icomponent.hpp"
 
 namespace Gravity {
-namespace Game {
 
 class World;
 
@@ -51,7 +50,6 @@ public:
     { components[T::family] = component; }
 };
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_ENTITY_HPP */

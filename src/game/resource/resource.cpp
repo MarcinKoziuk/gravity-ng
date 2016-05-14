@@ -7,11 +7,10 @@
 
 #include <string>
 
-#include "gravity/logging.hpp"
+#include "gravity/game/logging.hpp"
 #include "gravity/game/resource/resource.hpp"
 
 namespace Gravity {
-namespace Game {
 
 Resource::Resource(const std::string& key, const std::string& group)
     : key(key)
@@ -41,5 +40,4 @@ void Resource::Reload()
     Load();
 }
 
-} // namespace Game
 } // namespace Gravity

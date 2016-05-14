@@ -12,18 +12,26 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
+#ifdef _WIN32
+    #include <gravity/windows.hpp>
+#endif
+
 #include <GL/glew.h>
 #include <GL/gl.h>
 
 #include <SDL2/SDL.h>
+#ifdef __MINGW32__
+#	undef main
+#endif
 
-#include "gravity/logging.hpp"
+#include "gravity/game/logging.hpp"
 #include "gravity/game/world.hpp"
 #include "gravity/game/entity.hpp"
 #include "gravity/game/component/physics.hpp"
 #include "gravity/game/resource/resourceloader.hpp"
 #include "gravity/game/resource/resourcemanager.hpp"
 #include "gravity/game/resource/body.hpp"
+#include <gravity/game/asset/bodyasset.hpp>
 
 #include "gravity/cgame/display.hpp"
 #include "gravity/cgame/camera.hpp"
@@ -31,10 +39,8 @@
 
 //#include <unistd.h>
 using namespace Gravity;
-using namespace Game;
-using namespace CGame;
 
-int main()
+int main(int argc, char* argv[])
 {
     ResourceLoader::Init();
     ResourceManager mgr;
@@ -67,6 +73,13 @@ int main()
     b2Vec2 pos = body.GetPosition();
     Camera camera(glm::vec2(24, 16), glm::vec2(pos.x, pos.y));
     display.SetCamera(camera);
+
+    BodyPtr bulletResource = mgr.Load<Body>("bodies/bullet.json");
+
+    BodyAsset svg;
+    bool res = svg.Load("models/ships/interceptor-0/interceptor-0.yml");
+    //bool res = svg.Load("models/ships/test.svg");
+    LOG(info) << "res is " << res;
 
     while (running) {
         Uint32 now = SDL_GetTicks();
@@ -105,7 +118,7 @@ int main()
                     upPressed = true;
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-                    BodyPtr bulletResource = mgr.Load<Body>("bodies/bullet.json");
+
                     Entity* bulletEntity = new Entity(world);
                     b2Vec2 pos = physicsComponent.GetPhysicsBody().GetPosition();
                     glm::vec2 v1(0.f, 1.f);
@@ -139,7 +152,7 @@ int main()
             }
         }
 
-        rotate = leftPressed - rightPressed;
+        rotate = rightPressed - leftPressed;
         accel = upPressed;
 
 
@@ -178,9 +191,11 @@ int main()
 
 
     ResourceLoader::Deinit();
+
+    return 0;
 }
 
-#ifdef _WIN32
+/*#ifdef _WIN32
 #include <windows.h>
 int CALLBACK WinMain(
   _In_  HINSTANCE hInstance,
@@ -191,4 +206,4 @@ int CALLBACK WinMain(
 {
     main();
 }
-#endif
+#endif*/

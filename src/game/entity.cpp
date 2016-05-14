@@ -9,7 +9,6 @@
 #include "gravity/game/entity.hpp"
 
 namespace Gravity {
-namespace Game {
 
 std::size_t Entity::idSequence = 0;
 
@@ -19,5 +18,4 @@ Entity::Entity(World& world) : world(world)
     idSequence += 1L;
 }
 
-} // namespace Game
 } // namespace Gravity

@@ -15,7 +15,6 @@
 #include <Box2D/Collision/Shapes/b2Shape.h>
 
 namespace Gravity {
-namespace Game {
 
 class IShape {
 public:
@@ -24,7 +23,6 @@ public:
     virtual ~IShape() {}
 };
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_GEOMETRY__ISHAPE_HPP */

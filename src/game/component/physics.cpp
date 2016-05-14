@@ -13,7 +13,6 @@
 #include "gravity/game/resource/body.hpp"
 
 namespace Gravity {
-namespace Game {
 namespace Component {
 
 const std::size_t Physics::family = 2122559316L;
@@ -46,5 +45,4 @@ b2Body& Physics::GetPhysicsBody() const
 }
 
 } // namespace Component
-} // namespace Game
 } // namespace Gravity

@@ -14,7 +14,6 @@
 using glm::vec2;
 
 namespace Gravity {
-namespace Game {
 
 Triangle::Triangle(vec2 vertices[3])
 {
@@ -31,5 +30,4 @@ Triangle::~Triangle()
 {}
 
 
-} // namespace Game
 } // namespace Gravity

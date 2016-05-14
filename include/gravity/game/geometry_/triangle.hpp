@@ -17,7 +17,6 @@
 #include "gravity/game/geometry_/ishape.hpp"
 
 namespace Gravity {
-namespace Game {
 
 class Triangle : public IShape {
 private:
@@ -30,7 +29,6 @@ public:
     virtual ~Triangle();
 };
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_GEOMETRY__TRIANGLE_HPP */

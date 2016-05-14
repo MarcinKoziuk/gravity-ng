@@ -16,7 +16,6 @@
 #include <boost/shared_ptr.hpp>
 
 namespace Gravity {
-namespace Game {
 
 class Resource {
 protected:
@@ -47,7 +46,6 @@ public:
 
 typedef boost::shared_ptr<Resource> ResourcePtr;
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_RESOURCE_RESOURCE_HPP */

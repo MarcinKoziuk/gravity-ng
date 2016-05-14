@@ -1,9 +1,9 @@
 /*
  * cgame/renderer/glrenderer.hpp
  *
- * Interface for the rendering of drawable components.
+ * OpenGL renderer
  *
- * Copyright (c) 2014
+ * Copyright (c) 2014-2016
  * Marcin Koziuk <marcin.koziuk@gmail.com>
  */
 
@@ -11,13 +11,12 @@
 #define GRAVITY_CGAME_RENDERER_GLRENDERER_HPP
 
 #include <string>
-#include <map>
+#include <vector>
 
 #include <boost/optional.hpp>
 
 #include <SDL2/SDL.h>
 
-#include <GL/gl.h>
 #include <glm/glm.hpp>
 
 #include "gravity/game/resource/resourcemanager.hpp"
@@ -25,16 +24,15 @@
 #include "gravity/cgame/renderer/irenderer.hpp"
 
 namespace Gravity {
-namespace CGame {
 namespace Renderer {
 
-class GLRenderer {
+class GLRenderer : public IRenderer {
 public:
-    GLRenderer(SDL_Window* window, SDL_Renderer* sdlRenderer, Game::ResourceManager& resourceManager);
+    GLRenderer(SDL_Window* window, SDL_Renderer* sdlRenderer, ResourceManager& resourceManager);
 
     virtual ~GLRenderer() {}
 
-    bool Init();
+    virtual bool Init();
 
     virtual void Clear();
 
@@ -43,23 +41,22 @@ public:
     virtual void DrawTriangles(const std::vector<glm::vec2>& vertices);
 
 private:
-    bool CompileShader(const std::string&, GLenum, GLint*);
-    bool CreateProgram(const std::string&, GLuint*);
+    bool CompileShader(const std::string&, unsigned, int*);
+    bool CreateProgram(const std::string&, unsigned*);
     void LoadTriangleProgram();
 
 private:
-    Game::ResourceManager& resourceManager;
+    ResourceManager& resourceManager;
     SDL_Window* window;
     SDL_Renderer* sdlRenderer;
     SDL_GLContext glContext;
 
-    const GLuint* currentProgram;
-    GLuint triangleProgram;
-    GLint attrPosition;
+    const unsigned* currentProgram;
+    unsigned triangleProgram;
+    int attrPosition;
 };
 
 } // namespace Renderer
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_RENDERER_GLRENDERER_HPP */

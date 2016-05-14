@@ -28,7 +28,6 @@
 #include "gravity/game/resource/resource.hpp"
 
 namespace Gravity {
-namespace Game {
 
 class Body : public Resource {
 private:
@@ -60,7 +59,6 @@ public:
 
 typedef boost::shared_ptr<Body> BodyPtr;
 
-} // namespace Game
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_RESOURCE_BODY_HPP */

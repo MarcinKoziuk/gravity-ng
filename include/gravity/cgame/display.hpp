@@ -18,23 +18,22 @@
 
 #include "gravity/game/entity.hpp"
 #include "gravity/game/resource/resourcemanager.hpp"
-#include "gravity/cgame/renderer/glrenderer.hpp"
+#include "gravity/cgame/renderer/irenderer.hpp"
 #include "gravity/cgame/camera.hpp"
 
 namespace Gravity {
-namespace CGame {
 
 class Display : private boost::noncopyable {
 private:
-    Game::ResourceManager& resourceManager;
+    ResourceManager& resourceManager;
     bool isInitialized;
     SDL_Window* window;
     SDL_Renderer* sdlRenderer;
-    Renderer::GLRenderer* renderer;
+    Renderer::IRenderer* renderer;
     Camera* camera;
 
 public:
-    Display(Game::ResourceManager& resourceManager);
+    Display(ResourceManager& resourceManager);
 
     ~Display();
 
@@ -44,7 +43,7 @@ public:
 
     void SetCamera(Camera& camera);
 
-    void DrawEntity(const Game::Entity& entity);
+    void DrawEntity(const Entity& entity);
 
     bool Init();
 
@@ -52,7 +51,6 @@ public:
     { return window; }
 };
 
-} // namespace CGame
 } // namespace Gravity
 
 #endif /* GRAVITY_CGAME_DISPLAY_HPP */

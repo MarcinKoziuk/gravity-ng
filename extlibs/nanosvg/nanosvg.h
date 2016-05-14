@@ -132,6 +132,7 @@ typedef struct NSVGpath
 typedef struct NSVGshape
 {
 	char id[64];				// Optional 'id' attr of the shape or its group
+	char groupLabel[64];		// The label of the shape's group/layer (inkscape)
 	NSVGpaint fill;				// Fill paint
 	NSVGpaint stroke;			// Stroke paint
 	float opacity;				// Opacity of the shape.
@@ -368,6 +369,7 @@ typedef struct NSVGgradientData
 typedef struct NSVGattrib
 {
 	char id[64];
+	char label[64];
 	float xform[6];
 	unsigned int fillColor;
 	unsigned int strokeColor;
@@ -809,6 +811,7 @@ static void nsvg__addShape(NSVGparser* p)
 	memset(shape, 0, sizeof(NSVGshape));
 
 	memcpy(shape->id, attr->id, sizeof shape->id);
+	memcpy(shape->groupLabel, attr->label, sizeof shape->groupLabel);
 	scale = nsvg__getAverageScale(attr->xform);
 	shape->strokeWidth = attr->strokeWidth * scale;
 	shape->strokeLineJoin = attr->strokeLineJoin;
@@ -1543,6 +1546,9 @@ static int nsvg__parseAttr(NSVGparser* p, const char* name, const char* value)
 	} else if (strcmp(name, "id") == 0) {
 		strncpy(attr->id, value, 63);
 		attr->id[63] = '\0';
+	} else if (strcmp(name, "inkscape:label") == 0) {
+		strncpy(attr->label, value, 63);
+		attr->label[63] = '\0';
 	} else {
 		return 0;
 	}
