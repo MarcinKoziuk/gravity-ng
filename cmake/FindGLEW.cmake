@@ -13,7 +13,7 @@ $ENV{PROGRAMFILES}/GLEW/include
 ${PROJECT_SOURCE_DIR}/src/nvgl/glew/include
 DOC "The directory where GL/glew.h resides")
 FIND_LIBRARY( GLEW_LIBRARY
-NAMES glew GLEW glew32 glew32s glew32d
+NAMES glew GLEW glew32 glew32s glew32d libglew32 libglew32d
 PATHS
 $ENV{PROGRAMFILES}/GLEW/lib
 ${PROJECT_SOURCE_DIR}/src/nvgl/glew/bin

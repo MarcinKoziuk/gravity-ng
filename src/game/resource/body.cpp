@@ -14,13 +14,8 @@
 
 #include <boost/optional.hpp>
 
-#ifdef __linux__
 #include <json/value.h>
 #include <json/reader.h>
-#else
-#include <jsoncpp/json/value.h>
-#include <jsoncpp/json/reader.h>
-#endif
 
 #include <Box2D/Box2D.h>
 

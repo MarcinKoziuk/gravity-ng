@@ -12,9 +12,16 @@
 
 namespace Gravity {
 
-SVGAsset::SVGAsset()
+SVGAsset::SVGAsset(const std::string &path)
     : image(nullptr)
-{}
+{
+	boost::optional<std::vector<uint8_t>> maybeBytes = ResourceLoader::OpenAsBytes(path);
+	if (maybeBytes) {
+		std::vector<uint8_t> bytes = *maybeBytes;
+		bytes.push_back(0);
+		image = nsvgParse((char *)(&bytes[0]), "px", 96);
+	}
+}
 
 SVGAsset::~SVGAsset()
 {
@@ -23,18 +30,9 @@ SVGAsset::~SVGAsset()
     }
 }
 
-bool SVGAsset::Load(const std::string &path)
+bool SVGAsset::IsLoaded() const
 {
-    boost::optional<std::vector<char>> maybeBytes = ResourceLoader::OpenAsBytes(path);
-    if (maybeBytes) {
-        std::vector<char> bytes = *maybeBytes;
-        bytes.push_back(0);
-        image = nsvgParse(&bytes[0], "px", 96);
-
-        return true;
-    } else {
-        return false;
-    }
+	return image != nullptr;
 }
 
 const NSVGimage* SVGAsset::GetImage() const

@@ -16,7 +16,7 @@ class IAsset {
 public:
     virtual ~IAsset() {}
 
-    virtual bool Load(const std::string& path) = 0;
+    virtual bool IsLoaded() const = 0;
 
     virtual std::size_t CalculateSize() const = 0;
 

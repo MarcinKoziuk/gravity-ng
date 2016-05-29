@@ -12,8 +12,6 @@
 #ifndef GRAVITY_GAME_COMPONENT_ICOMPONENT_HPP
 #define GRAVITY_GAME_COMPONENT_ICOMPONENT_HPP
 
-#include "gravity/game/entity.hpp"
-
 namespace Gravity {
 
 class IComponent {

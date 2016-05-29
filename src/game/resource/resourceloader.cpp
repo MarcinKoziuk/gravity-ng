@@ -19,11 +19,7 @@
 #include <physfs.h>
 #include <physfs.hpp>
 
-#ifdef __linux__
 #include <json/reader.h>
-#else
-#include <jsoncpp/json/reader.h>
-#endif
 
 #include <gravity/gravity.hpp>
 #include <gravity/game/logging.hpp>
@@ -66,11 +62,18 @@ void ResourceLoader::Init()
 {
     PHYSFS_init(GRAVITY_NAME);
 
-    bool success = PHYSFS_mount("../gravity-ng/data", "/", true);
-    if (!success) {
+	int mounts = 0;
+	mounts += !!PHYSFS_mount("../gravity-ng/data", "/", true);
+	mounts += !!PHYSFS_mount("./data", "/", true);
+	mounts += !!PHYSFS_mount("./Debug/data", "/", true);
+	mounts += !!PHYSFS_mount("./Release/data", "/", true);
+
+    if (!mounts) {
         LOG(fatal) << "Mounting of data directory failed";
         throw std::runtime_error("Failed to mount PhysFS directory");
-    }
+	} else {
+		LOG(info) << "Number of PhysFS mounts: " << mounts;
+	}
 
     LOG(trace) << "Currently mounted search paths are:";
     const std::vector<std::string> paths = PhysFS::getSearchPath();
@@ -90,12 +93,12 @@ optional<ResourceLoader::StreamWrapperPtr> ResourceLoader::OpenAsStream(const st
     }
 }
 
-optional<std::vector<char>> ResourceLoader::OpenAsBytes(const std::string& path)
+optional<std::vector<std::uint8_t>> ResourceLoader::OpenAsBytes(const std::string& path)
 {
     PHYSFS_File* file = PHYSFS_openRead(FixPath(path).c_str());
     if (file) {
         size_t fileLength = PHYSFS_fileLength(file);
-        vector<char> data(fileLength);
+        vector<uint8_t> data(fileLength);
 
         PHYSFS_read(file, &data[0], fileLength, 1);
         PHYSFS_close(file);

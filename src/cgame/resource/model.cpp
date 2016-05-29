@@ -12,11 +12,7 @@
 
 #include <boost/optional.hpp>
 
-#ifdef __linux__
 #include <json/json.h>
-#else
-#include <jsoncpp/json/json.h>
-#endif
 
 #include "gravity/game/logging.hpp"
 #include "gravity/game/resource/resourceloader.hpp"

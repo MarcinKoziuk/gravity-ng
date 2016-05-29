@@ -39,7 +39,11 @@ public:
 
     virtual void DrawTriangles(const std::vector<glm::vec2>& vertices);
 
+	virtual void DrawLines(const std::vector<glm::vec2>& lines, RGBA color, bool closed);
+
 private:
+	void DrawLine(const glm::vec2& p1, const glm::vec2& p2);
+
     ResourceManager& resourceManager;
     SDL_Window* window;
     SDL_Renderer* sdlRenderer;

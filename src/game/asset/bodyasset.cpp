@@ -32,14 +32,54 @@ namespace fs = boost::filesystem;
 
 namespace Gravity {
 
+BodyAsset::BodyAsset(const std::string& path)
+	: loaded(false)
+{
+	Load(path);
+}
+
 BodyAsset::BodyAsset()
+	: loaded(false)
 {}
 
 BodyAsset::~BodyAsset()
 {
-    for (b2Shape* shape : shapes) {
+    for (b2Shape* shape : physicsShapes) {
         delete shape;
     }
+}
+
+void BodyAsset::Load(const std::string& path)
+{
+	this->path = path;
+
+	YAMLAsset yamlAsset(path);
+
+	if (yamlAsset.IsLoaded()) {
+		fs::path yamlFsPath(path);
+		YAML::Node root = yamlAsset.GetRoot();
+		std::string svgFilename;
+
+		if (root["model"]) {
+			svgFilename = root["model"].as<std::string>();
+		}
+		else {
+			svgFilename = yamlFsPath.filename().replace_extension("svg").string();
+		}
+
+		const std::string svgPath = (yamlFsPath.parent_path() / svgFilename).string();
+
+		SVGAsset svgAsset(svgPath);
+		if (svgAsset.IsLoaded()) {
+			LoadImpl(root, svgAsset.GetImage());
+			loaded = true;
+		}
+	}
+}
+
+bool BodyAsset::IsLoaded() const
+{
+	return loaded;
 }
 
 b2Shape* BodyAsset::MakePolygonShape(const std::vector<glm::vec2>& points)
@@ -58,66 +98,84 @@ void BodyAsset::ConstructFixtureDef(const b2FixtureDef& standardFixtureDef, cons
 {
     b2FixtureDef fixtureDef = standardFixtureDef;
     b2Shape* shape = MakePolygonShape(points);
-    shapes.push_back(shape);
+    physicsShapes.push_back(shape);
 
     fixtureDef.shape = shape;
     fixtureDefs.push_back(fixtureDef);
 }
 
-void BodyAsset::LoadShape(const b2FixtureDef& standardFixtureDef, const NSVGshape* shape)
+std::vector<std::vector<glm::vec2>> BodyAsset::ShapeToLines(const NSVGshape* shape, const TransformProps& tp)
 {
-    for (const NSVGpath* path = shape->paths; path != nullptr; path = path->next) {
-        std::stringstream pathInfo;
-        pathInfo << "(" << shape->id << " of " << svgPath << ")";
+	std::vector<std::vector<glm::vec2>> lines;
 
-        if (path->closed) {
-            LOG(warning) << "SVG body path is not closed " << pathInfo.str();
-        }
+	for (const NSVGpath* path = shape->paths; path != nullptr; path = path->next) {
+		std::stringstream pathInfo;
+		pathInfo << "(" << shape->id << " of " << path << ")";
 
-        std::vector<glm::vec2> points;
+		if (!path->closed) {
+			LOG(warning) << "SVG body path is not closed in model " << pathInfo.str();
+		}
 
-        for (int i = 0; i < path->npts-1; i += 3) {
-            float* p = &path->pts[i*2];
-            std::vector<glm::vec2> cubicBezier;
-            cubicBezier.push_back(glm::vec2(p[0], p[1]));
-            cubicBezier.push_back(glm::vec2(p[2], p[3]));
-            cubicBezier.push_back(glm::vec2(p[4], p[5]));
-            cubicBezier.push_back(glm::vec2(p[6], p[7]));
+		std::vector<glm::vec2> points;
 
-            std::vector<glm::vec2> approximatedBezier = Casteljau(cubicBezier);
+		for (int i = 0; i < path->npts - 1; i += 3) {
+			float* p = &path->pts[i * 2];
+			std::vector<glm::vec2> cubicBezier;
+			cubicBezier.push_back(glm::vec2(p[0], p[1]));
+			cubicBezier.push_back(glm::vec2(p[2], p[3]));
+			cubicBezier.push_back(glm::vec2(p[4], p[5]));
+			cubicBezier.push_back(glm::vec2(p[6], p[7]));
 
-            int iz = 0;
-            for (const auto& p : approximatedBezier) {
-                if (iz % 4 == 0) {
-                    points.push_back(p);
-                }
-                iz++;
-            }
-        }
+			std::vector<glm::vec2> approximatedBezier = Casteljau(cubicBezier);
 
-        if (points.size() < 3) {
-            LOG(error) << "SVG body path has less than 3 points " << pathInfo.str();
-            continue;
-        }
-        if (points.size() > 8) {
-            int reduction = std::ceil((double)points.size() / 8.);
+			int iz = 0;
+			for (const auto& p : approximatedBezier) {
+				if (iz % 4 == 0) {
+					points.push_back(p);
+				}
+				iz++;
+			}
+		}
 
-            LOG(warning) << "SVG body path has more than 8 points ("
-                         << points.size() << "), reducing x" << reduction << " " << pathInfo.str();
+		if (points.size() < 3) {
+			LOG(error) << "SVG body path has less than 3 points " << pathInfo.str();
+			continue;
+		}
+		if (points.size() > 8) {
+			int reduction = std::ceil((double)points.size() / 8.);
+
+			LOG(warning) << "SVG body path has more than 8 points ("
+				<< points.size() << "), reducing x" << reduction << " " << pathInfo.str();
 
 
-            std::vector<glm::vec2> newpoints;
-            for (std::size_t i = 0; i < points.size(); i++) {
-                if (i % reduction == 0) {
-                    newpoints.push_back(points[i]);
-                }
-            }
+			std::vector<glm::vec2> newpoints;
+			for (std::size_t i = 0; i < points.size(); i++) {
+				if (i % reduction == 0) {
+					newpoints.push_back(points[i]);
+				}
+			}
 
-            points.swap(newpoints);
-        }
+			points.swap(newpoints);
+		}
 
-        ConstructFixtureDef(standardFixtureDef, points);
-    }
+		for (int i = 0; i < points.size(); i++) {
+			points[i] -= tp.origin;
+			points[i] *= tp.scale;
+		}
+
+		lines.push_back(points);
+	}
+
+	return lines;
+}
+
+void BodyAsset::LoadShape(const b2FixtureDef& standardFixtureDef, const NSVGshape* shape, const BodyAsset::TransformProps& tp)
+{
+	const std::vector<std::vector<glm::vec2>> lines = ShapeToLines(shape, tp);
+
+	for (const std::vector<glm::vec2>& line : lines) {
+		ConstructFixtureDef(standardFixtureDef, line);
+	}
 }
 
 b2FixtureDef BodyAsset::MakeStandardFixtureDef(const YAML::Node& root)
@@ -140,50 +198,38 @@ b2FixtureDef BodyAsset::MakeStandardFixtureDef(const YAML::Node& root)
     return fixtureDef;
 }
 
-void BodyAsset::LoadImpl(const YAML::Node& root, const NSVGimage* image)
+BodyAsset::TransformProps BodyAsset::LoadImpl(const YAML::Node& root, const NSVGimage* image)
 {
-    b2FixtureDef standardFixtureDef = MakeStandardFixtureDef(root);
+	TransformProps tp;
+	b2FixtureDef standardFixtureDef = MakeStandardFixtureDef(root);
+
+	if (root["scale"]) {
+		tp.scale = root["scale"].as<double>();
+	}
+
+	// Must find origin first before parsing the rest
+	for (const NSVGshape* shape = image->shapes; shape != nullptr; shape = shape->next) {
+		const char* group = shape->groupLabel;
+		if (std::strcmp(group, ORIGIN_GROUP_LABEL) == 0) {
+			NSVGpath* path = shape->paths;
+			tp.origin.x = (path->bounds[0] + path->bounds[2]) / 2.f;
+			tp.origin.y = (path->bounds[1] + path->bounds[3]) / 2.f;
+		}
+	}
 
     for (const NSVGshape* shape = image->shapes; shape != nullptr; shape = shape->next) {
         const char* group = shape->groupLabel;
-        if (std::strcmp(group, "body") == 0) {
-            LoadShape(standardFixtureDef, shape);
+        if (std::strcmp(group, BODY_GROUP_LABEL) == 0) {
+            LoadShape(standardFixtureDef, shape, tp);
         }
     }
+
+	return tp;
 }
 
-bool BodyAsset::Load(const std::string &path)
+const std::vector<b2FixtureDef>& BodyAsset::GetFixtureDefs() const
 {
-    { LOG(warning) << "HELLO?"; }
-    YAMLAsset yamlAsset;
-
-    yamlPath = path;
-
-    if (yamlAsset.Load(yamlPath)) {
-        fs::path yamlFsPath(yamlPath);
-        YAML::Node root = yamlAsset.GetRoot();
-        std::string svgFilename;
-
-        if (root["model"]) {
-            svgFilename = root["model"].as<std::string>();
-        } else {
-            svgFilename = yamlFsPath.filename().replace_extension("svg").string();
-        }
-
-        svgPath = (yamlFsPath.parent_path() / svgFilename).string();
-
-        SVGAsset svgAsset;
-
-        if (svgAsset.Load(svgPath)) {
-            LoadImpl(root, svgAsset.GetImage());
-            return true;
-        } else {
-            return false;
-        }
-
-    } else {
-        return false;
-    }
+	return fixtureDefs;
 }
 
 std::size_t BodyAsset::CalculateSize() const

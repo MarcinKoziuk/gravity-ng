@@ -11,6 +11,9 @@ set(GRAVITY_MINOR_VERSION 1)
 # --- Compile options ---
 
 option(GRAVITY_STATIC_VARIANT "Build static and minimal variant" OFF)
+option(GRAVITY_STATIC_DEPENDENCIES "Whether the dependency libraries have been built as static or shared" OFF)
+option(GRAVITY_COPY_DLLS "Whether to copy DLL files to build directory (only for development)" OFF)
+option(GRAVITY_SYMLINK_DATA "Whether to symlink data dir to build directory (only for development) " OFF)
 
 # -- Targets ---
 
@@ -52,6 +55,7 @@ file(GLOB_RECURSE EXTLIBS_DEV_H
     "extlibs/physfs/*.hpp"
     "extlibs/poly2tri/*.h"
     "extlibs/rapidxml/*.hpp"
+	"extlibs/stb_image/stb_image.h"
 )
 file(GLOB_RECURSE EXTLIBS_DEV_SRC
     "extlibs/nanosvg/*.c"
@@ -93,6 +97,11 @@ add_executable(${GRAVITY_SERVER_EXECUTABLE}
     ${GRAVITY_SERVER_SRC}
     ${GRAVITY_SERVER_H}
 )
+
+# Workaround for multiple definition of __ftol2_sse error
+if (MSVC)
+	set_target_properties(${GRAVITY_CLIENT_EXECUTABLE} PROPERTIES LINK_FLAGS_MINSIZEREL /FORCE:multiple)
+endif()
 
 # --- Source groups ---
 
@@ -160,6 +169,7 @@ include_directories(SYSTEM "extlibs/physfs/include")
 include_directories(SYSTEM "extlibs/poly2tri")
 include_directories(SYSTEM "extlibs/nanosvg")
 include_directories(SYSTEM "extlibs/rapidxml")
+include_directories(SYSTEM "extlibs/stb_image")
 
 # --------------
 
@@ -179,6 +189,11 @@ if (NOT GRAVITY_STATIC_VARIANT)
     set(GRAVITY_CGAME_FLAGS "${GRAVITY_CGAME_FLAGS} -DGRAVITY_CGAME_EXPORTS")
    # add_definitions(-DBOOST_ALL_DYN_LINK)
    # add_definitions(-DGLEW_STATIC) #temporary <?
+endif()
+if (GRAVITY_STATIC_DEPENDENCIES)
+	add_definitions(-DGLEW_STATIC)
+else()
+	add_definitions(-DYAML_CPP_DLL)
 endif()
 
 set_target_properties(${GRAVITY_GAME_LIBRARY} PROPERTIES COMPILE_FLAGS ${GRAVITY_GAME_FLAGS})
@@ -240,6 +255,11 @@ endforeach()
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /MP /fp:fast")
     #add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	add_definitions(/utf-8 /wd4828 /EHsc)
+	#wut??
+	#if (CMAKE_BUILD_TYPE EQUAL Debug)
+	#	add_definitions(/MDd)
+	#endif()
 else()
     set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wextra -Wstrict-aliasing -pedantic -ffast-math")
 endif()
@@ -249,7 +269,8 @@ add_definitions(-DGRAVITY_COMPILETIME_SOURCE_PATH="${CMAKE_SOURCE_DIR}")
 add_definitions(-DBOOST_ALL_NO_LIB=1)
 
 find_package(Threads REQUIRED)
-find_package(Boost COMPONENTS thread program_options system filesystem date_time)
+#find_package(Boost COMPONENTS thread program_options system filesystem date_time)
+find_package(Boost COMPONENTS program_options system filesystem REQUIRED)
 find_package(Box2D REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
@@ -260,9 +281,11 @@ find_package(SDL2 REQUIRED)
 find_package(JsonCpp REQUIRED)
 find_package(PhysFS REQUIRED)
 find_package(GLM REQUIRED)
-#find_package(CEGUI REQUIRED)
+find_package(CEGUI REQUIRED)
 #find_package(LOGOG REQUIRED)
 find_package(YAMLCPP REQUIRED)
+find_package(Freetype REQUIRED)
+#find_package(MyGUI REQUIRED)
 
 #message(${Boost_LIBRARIES})
 #message(${BOX2D_LIBRARY})
@@ -285,6 +308,8 @@ include_directories(SYSTEM ${PHYSFS_INCLUDE_DIR})
 include_directories(SYSTEM ${GLM_INCLUDE_DIR})
 #include_directories(SYSTEM ${LOGOG_INCLUDE_DIR})
 include_directories(SYSTEM ${YAMLCPP_INCLUDE_DIR})
+include_directories(SYSTEM ${CEGUI_INCLUDE_DIR}/cegui-0)
+#include_directories(SYSTEM ${MYGUI_INCLUDE_DIR})
 
 #target_link_libraries(${GRAVITY_DEV_LIBRARY}
 #    ${CMAKE_THREAD_LIBS_INIT}
@@ -305,6 +330,10 @@ target_link_libraries(${GRAVITY_CGAME_LIBRARY}
     ${GLEW_LIBRARY}
     ${OPENGL_LIBRARY}
     ${SDL2_LIBRARY}
+	${FREETYPE_LIBRARY}
+	#${MYGUI_LIBRARY}
+	#${MYGUI_OPENGLSYSTEM_LIBRARY}
+	${CEGUI_LIBRARIES}
 )
 target_link_libraries(${GRAVITY_CLIENT_EXECUTABLE}
     ${GLEW_LIBRARY} # temp?
@@ -315,9 +344,49 @@ if (NOT UNIX)
         ${GRAVITY_CGAME_LIBRARY}
         ${SDL2MAIN_LIBRARY})
 endif()
+if (GRAVITY_STATIC_DEPENDENCIES AND WIN32)
+	target_link_libraries(
+		${GRAVITY_CGAME_LIBRARY}
+		 opengl32 imm32 version winmm
+	)
+endif()
 
 target_link_libraries(${GRAVITY_SERVER_EXECUTABLE}
     ${GRAVITY_GAME_LIBRARY}
 )
+
+if (GRAVITY_COPY_DLLS AND WIN32)
+	file(GLOB GRAVITY_DEPENDENCY_DLLS
+		${CMAKE_PREFIX_PATH}/lib/*.dll
+        ${CMAKE_PREFIX_PATH}/bin/*.dll
+	)
+
+	foreach(GRAVITY_DEPENDENCY_DLL ${GRAVITY_DEPENDENCY_DLLS})
+		add_custom_command(TARGET ${GRAVITY_CLIENT_EXECUTABLE} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${GRAVITY_DEPENDENCY_DLL}"
+				$<TARGET_FILE_DIR:${GRAVITY_CLIENT_EXECUTABLE}>
+		)
+	endforeach()
+endif()
+
+if (GRAVITY_SYMLINK_DATA AND WIN32)
+	#add_custom_command(TARGET ${GRAVITY_CLIENT_EXECUTABLE} POST_BUILD
+	#	COMMAND ${CMAKE_COMMAND} -E make_directory
+	#		"$<TARGET_FILE_DIR:${GRAVITY_CLIENT_EXECUTABLE}>/data"
+	#)
+
+	#add_custom_command(TARGET ${GRAVITY_CLIENT_EXECUTABLE} POST_BUILD
+	#	COMMAND ${CMAKE_COMMAND} -E copy_directory
+	#		"${CMAKE_SOURCE_DIR}/data"
+	#		"$<TARGET_FILE_DIR:${GRAVITY_CLIENT_EXECUTABLE}>/data"
+	#)
+	
+	add_custom_command(TARGET ${GRAVITY_CLIENT_EXECUTABLE} POST_BUILD
+		COMMAND if not exist "\"$<TARGET_FILE_DIR:${GRAVITY_CLIENT_EXECUTABLE}>/data\"" mklink /J
+			"\"$<TARGET_FILE_DIR:${GRAVITY_CLIENT_EXECUTABLE}>/data\""
+			"\"${CMAKE_SOURCE_DIR}/data\""
+	)
+endif()
 
 #set(CMAKE_C_COMPILER "/usr/bin/clang")

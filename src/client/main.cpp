@@ -24,6 +24,12 @@
 #	undef main
 #endif
 
+//#include <MYGUI/MyGUI.h>
+//#include <MYGUI/MyGUI_OpenGLPlatform.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "gravity/game/logging.hpp"
 #include "gravity/game/world.hpp"
 #include "gravity/game/entity.hpp"
@@ -36,9 +42,66 @@
 #include "gravity/cgame/display.hpp"
 #include "gravity/cgame/camera.hpp"
 #include "gravity/cgame/resource/model.hpp"
+#include <gravity/cgame/asset/modelasset.hpp>
+#include <gravity/cgame/component/graphics.hpp>
 
 //#include <unistd.h>
 using namespace Gravity;
+/*
+class StbImageLoader : public MyGUI::OpenGLImageLoader {
+private:
+	std::vector<uint8_t*> images;
+public:
+	StbImageLoader()
+	{}
+
+	~StbImageLoader()
+	{
+		for (uint8_t* image : images) {
+			stbi_image_free(image);
+		}
+	}
+
+	virtual void* loadImage(int& _width, int& _height, MyGUI::PixelFormat& _format, const std::string& _filename)
+	{
+		boost::optional<std::vector<uint8_t>> maybeBytes = ResourceLoader::OpenAsBytes(_filename);
+		if (maybeBytes) {
+			const std::vector<uint8_t>& bytes = *maybeBytes;
+			int width, height, component;
+
+			uint8_t* image = stbi_load_from_memory(&bytes[0], bytes.size(), &width, &height, &component, 0);
+			images.push_back(image);
+
+			LOG(trace) << "Loaded " << _filename;
+
+			return image;
+		} else {
+			LOG(error) << "Cannot load image " << _filename;
+			return nullptr;
+		}
+	}
+
+	virtual void saveImage(int _width, int _height, MyGUI::PixelFormat _format, void* _texture, const std::string& _filename)
+	{
+		LOG(trace) << "Saving image " << _filename;
+	}
+};
+*/
+
+#include <CEGUI/RendererModules/OpenGL/GL3Renderer.h>
+#include <CEGUI/System.h>
+
+#include "gravity/cgame/ui/ceguiphysfsresourceprovider.hpp"
+
+void GuiInit()
+{
+	CEGUI::OpenGL3Renderer& myRenderer = CEGUI::OpenGL3Renderer::create();
+	PhysFSResourceProvider* rp = new PhysFSResourceProvider();
+	CEGUI::System::create(myRenderer, static_cast<CEGUI::ResourceProvider*>(rp), NULL, NULL, NULL, "", "log.txt");
+
+	//set Resource Group directories and load data
+	//...
+}
 
 int main(int argc, char* argv[])
 {
@@ -47,16 +110,28 @@ int main(int argc, char* argv[])
     Display display(mgr);
     display.Init();
 
+	GuiInit();
+
+	LOG(info) << "our bits is " << sizeof(void*);
+
     BodyPtr bodyResource = mgr.Load<Body>("bodies/ship.json");
+
+	std::shared_ptr<ModelAsset> shippie = std::make_shared<ModelAsset>("models/ships/interceptor-0/interceptor-0.yml");
 
     World world;
     Entity entity(world);
     Entity entity2(world);
     std::vector<Entity*> bulletEntities;
-    Component::Physics physicsComponent(entity, bodyResource, glm::vec2(0, 0));
-    Component::Physics physicsComponent2(entity, bodyResource, glm::vec2(6, 6));
+	Component::Graphics g1(shippie);
+	Component::Graphics g2(shippie);
+
+    Component::Physics physicsComponent(entity.GetWorld(), *shippie, glm::vec2(0, 0));
+    Component::Physics physicsComponent2(entity.GetWorld(), *shippie, glm::vec2(6, 6));
     entity.AddComponent<Component::Physics>(&physicsComponent);
     entity2.AddComponent<Component::Physics>(&physicsComponent2);
+
+	entity.AddComponent<Component::Graphics>(&g1);
+	entity2.AddComponent<Component::Graphics>(&g2);
 
     ModelPtr model = mgr.Load<Model>("models/ship.json");
 
@@ -75,11 +150,18 @@ int main(int argc, char* argv[])
     display.SetCamera(camera);
 
     BodyPtr bulletResource = mgr.Load<Body>("bodies/bullet.json");
+	/*
+	StbImageLoader imageLoader;
 
-    BodyAsset svg;
-    bool res = svg.Load("models/ships/interceptor-0/interceptor-0.yml");
-    //bool res = svg.Load("models/ships/test.svg");
-    LOG(info) << "res is " << res;
+	MyGUI::OpenGLPlatform platform;
+	platform.initialise(&imageLoader);
+
+	MyGUI::Gui gui;
+	gui.initialise();
+
+	MyGUI::LayoutManager::getInstance().loadLayout("D:/Dropbox/Projects/gravity-ng/data/testlayout.xml");
+	*/
+	//platform.initialise(&il);
 
     while (running) {
         Uint32 now = SDL_GetTicks();
@@ -125,7 +207,7 @@ int main(int argc, char* argv[])
                     v1 = glm::rotate(v1, body.GetAngle());
                     v1 += glm::vec2(body.GetPosition().x, body.GetPosition().y);
 
-                    Component::Physics* bulletPhysics = new Component::Physics(entity, bulletResource, v1);
+                    Component::Physics* bulletPhysics = new Component::Physics(entity.GetWorld(), bulletResource, v1);
                     bulletEntity->AddComponent<Component::Physics>(bulletPhysics);
                     bulletEntities.push_back(bulletEntity);
                     glm::vec2 v(0.f, 6.5f);
@@ -157,7 +239,7 @@ int main(int argc, char* argv[])
 
 
         body.ApplyTorque(rotate*2 - body.GetAngularVelocity(), true);
-        glm::vec2 force = glm::rotate(glm::vec2(0.f, float(accel)*2.f), body.GetAngle());
+        glm::vec2 force = glm::rotate(glm::vec2(0.f, float(accel)*-2.f), body.GetAngle());
         body.ApplyForce(b2Vec2(force.x, force.y), body.GetPosition(), true);
 
         float32 timeStep = 1.0f / 30.f;

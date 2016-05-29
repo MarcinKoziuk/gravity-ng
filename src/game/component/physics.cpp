@@ -17,15 +17,15 @@ namespace Component {
 
 const std::size_t Physics::family = 2122559316L;
 
-Physics::Physics(Entity& entity, BodyPtr resource, glm::vec2 pos)
-    : entity(entity)
+Physics::Physics(World& world, BodyPtr resource, glm::vec2 pos)
+	: world(world)
     , bodyResource(resource)
 {
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.position = b2Vec2(pos.x, pos.y);
 
-    b2World* physicsWorld = entity.GetWorld().GetPhysics();
+    b2World* physicsWorld = world.GetPhysics();
     physicsBody = physicsWorld->CreateBody(&bodyDef);
 
     std::vector<b2FixtureDef> fixtureDefs = resource->GetFixtureDefs();
@@ -36,8 +36,28 @@ Physics::Physics(Entity& entity, BodyPtr resource, glm::vec2 pos)
     }
 }
 
+Physics::Physics(World& world, const BodyAsset& bodyAsset, glm::vec2 pos)
+	: world(world)
+{
+	b2BodyDef bodyDef;
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = b2Vec2(pos.x, pos.y);
+
+	b2World* physicsWorld = world.GetPhysics();
+	physicsBody = physicsWorld->CreateBody(&bodyDef);
+
+	const std::vector<b2FixtureDef>& fixtureDefs = bodyAsset.GetFixtureDefs();
+	for (std::size_t i = 0; i < fixtureDefs.size(); i++) {
+		const b2FixtureDef* fixtureDef = &fixtureDefs[i];
+		physicsBody->CreateFixture(&fixtureDefs[i]);
+	}
+}
+
 Physics::~Physics()
-{}
+{
+	b2World* physicsWorld = world.GetPhysics();
+	physicsWorld->DestroyBody(physicsBody);	
+}
 
 b2Body& Physics::GetPhysicsBody() const
 {

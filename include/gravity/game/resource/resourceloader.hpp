@@ -12,17 +12,14 @@
 
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 #include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
 
 #include <physfs.hpp>
 
-#ifdef __linux__
 #include <json/forwards.h>
-#else
-#include <jsoncpp/json/forwards.h>
-#endif
 
 namespace Gravity {
 
@@ -54,7 +51,7 @@ public:
 
     static boost::optional<StreamWrapperPtr>   OpenAsStream(const std::string& path);
 
-    static boost::optional<std::vector<char>>  OpenAsBytes(const std::string& path);
+    static boost::optional<std::vector<std::uint8_t>>  OpenAsBytes(const std::string& path);
 };
 
 } // namespace Gravity

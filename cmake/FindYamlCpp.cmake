@@ -1,5 +1,5 @@
 find_path(YAMLCPP_INCLUDE_DIR yaml-cpp/yaml.h)
-find_library(YAMLCPP_LIBRARY NAMES yaml-cpp libyaml-cppmdd)
+find_library(YAMLCPP_LIBRARY NAMES yaml-cpp libyaml-cppmdd libyaml-cppmd)
 
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(YAMLCPP DEFAULT_MSG YAMLCPP_LIBRARY YAMLCPP_INCLUDE_DIR)

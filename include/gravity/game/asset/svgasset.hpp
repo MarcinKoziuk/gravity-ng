@@ -19,11 +19,11 @@ private:
     NSVGimage* image;
 
 public:
-    SVGAsset();
+    SVGAsset(const std::string& path);
 
     virtual ~SVGAsset();
 
-    virtual bool Load(const std::string& path);
+    virtual bool IsLoaded() const;
 
     virtual std::size_t CalculateSize() const;
 

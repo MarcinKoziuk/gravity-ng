@@ -17,27 +17,25 @@
 
 namespace Gravity {
 
-YAMLAsset::YAMLAsset()
-{}
+YAMLAsset::YAMLAsset(const std::string &path)
+{
+	boost::optional<ResourceLoader::StreamWrapperPtr> maybeIStream = ResourceLoader::OpenAsStream(path);
+	if (maybeIStream) {
+		try {
+			std::istream& is = ***maybeIStream;
+			root = YAML::Load(is);
+		} catch (...) {
+			LOG(error) << "Parsing yml file " << path << " failed";
+		}
+	}
+}
 
 YAMLAsset::~YAMLAsset()
 {}
 
-bool YAMLAsset::Load(const std::string &path)
+bool YAMLAsset::IsLoaded() const
 {
-    boost::optional<ResourceLoader::StreamWrapperPtr> maybeIStream = ResourceLoader::OpenAsStream(path);
-    if (maybeIStream) {
-        try {
-            std::istream& is = ***maybeIStream;
-            root = YAML::Load(is);
-            return root;
-        } catch (...) {
-            LOG(error) << "Parsing yml file " << path << " failed";
-            return false;
-        }
-    } else {
-        return false;
-    }
+	return root.Type() != YAML::NodeType::Undefined;
 }
 
 const YAML::Node& YAMLAsset::GetRoot() const

@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <map>
 
-#include "gravity/game/component/icomponent.hpp"
+#include <gravity/game/component/icomponent.hpp>
 
 namespace Gravity {
 
@@ -39,7 +39,7 @@ public:
 
     template<class T>
     bool HasComponent() const
-    { return components.count(T::family); }
+    { return components.count(T::family) != 0; }
 
     template<class T>
     const T& GetComponent() const

@@ -16,6 +16,7 @@
 	#define NOMINMAX 1
 	#define STRICT 1
 	#include <Windows.h>
+	#undef RGB
 #else
 	#error "Not Windows. Why include windows.hpp?"
 #endif

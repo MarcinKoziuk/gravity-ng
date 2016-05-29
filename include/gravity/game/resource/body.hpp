@@ -17,11 +17,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#ifdef __linux__
 #include <json/forwards.h>
-#else
-#include <jsoncpp/json/forwards.h>
-#endif
 
 #include <Box2D/Dynamics/b2Fixture.h>
 

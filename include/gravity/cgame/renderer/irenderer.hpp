@@ -14,6 +14,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <gravity/cgame/rgb.hpp>
+
 #include <glm/vec2.hpp>
 
 namespace Gravity {
@@ -30,6 +32,8 @@ public:
     //virtual void DrawLine() = 0;
 
     virtual void DrawTriangles(const std::vector<glm::vec2>& vertices) = 0;
+
+	virtual void DrawLines(const std::vector<glm::vec2>& lines, RGBA color, bool closed) = 0;
 
     virtual ~IRenderer() {}
 };

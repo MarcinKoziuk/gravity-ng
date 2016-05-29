@@ -19,9 +19,9 @@ private:
     std::string text;
 
 public:
-    TextAsset();
+    TextAsset(const std::string& path);
 
-    virtual bool Load(const std::string& path);
+    virtual bool IsLoaded() const;
 
     const std::string& GetText() const;
 
