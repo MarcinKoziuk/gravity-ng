@@ -11,6 +11,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 #include <SDL2/SDL.h>
+#include <GL/glew.h>
 
 #include <Box2D/Box2D.h>
 
@@ -23,6 +24,7 @@
 #include "gravity/cgame/display.hpp"
 #include "gravity/cgame/renderer/glrenderer.hpp"
 #include "gravity/cgame/renderer/sdlrenderer.hpp"
+#include "gravity/cgame/renderer/nvgrenderer.hpp"
 #include "gravity/cgame/component/graphics.hpp"
 
 namespace Gravity {
@@ -47,10 +49,13 @@ bool Display::Init()
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
     window = SDL_CreateWindow("Window caption",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         1280, 800,
-		SDL_WINDOW_RESIZABLE);
+		SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
 
     if (window == NULL) {
@@ -58,26 +63,36 @@ bool Display::Init()
         return false;
     }
 
-    sdlRenderer = SDL_CreateRenderer(window, -1, 0);
-    if (sdlRenderer == NULL) {
-        LOG(fatal) << "SDL Renderer initialization failed: " << SDL_GetError();
-        return false;
-    }
+	SDL_GL_CreateContext(window);
 
-    renderer = new Renderer::SDLRenderer(window, sdlRenderer, resourceManager);
+	SDL_ShowCursor(0);
 
-    if (!renderer->Init()) {
-        LOG(fatal) << "Renderer initialization failed.";
-        return false;
-    }
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK) {
+		LOG(fatal) << "Could not init GLEW.";
+		return false;
+	}
 
-    isInitialized = true;
+	// GLEW generates GL error because it calls glGetString(GL_EXTENSIONS), we'll consume it here.
+	glGetError();
+
+	isInitialized = true;
     return true;
+}
+
+bool Display::Init2()
+{
+	renderer = new Renderer::NvgRenderer(window);
+
+	if (!renderer->Init()) {
+		LOG(fatal) << "Renderer initialization failed.";
+		return false;
+	}
 }
 
 void Display::Clear()
 {
-    SDL_RenderClear(sdlRenderer);
+   // SDL_RenderClear(sdlRenderer);
     renderer->Clear();
 }
 
@@ -180,9 +195,16 @@ void Display::Present()
     /*SDL_SetRenderDrawColor(sdlRenderer, 255, 0, 0, 1.0);
     SDL_RenderDrawLine(sdlRenderer, 10, 10, 40, 40);*/
 
-    SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
+   // SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
 
-    SDL_RenderPresent(sdlRenderer);
+   // SDL_RenderPresent(sdlRenderer);
+}
+
+glm::tvec2<int> Display::GetWindowSize()
+{
+	glm::tvec2<int> res;
+	SDL_GetWindowSize(window, &res.x, &res.y);
+	return res;
 }
 
 } // namespace Gravity

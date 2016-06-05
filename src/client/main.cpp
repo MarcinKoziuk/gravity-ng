@@ -13,7 +13,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 #ifdef _WIN32
-    #include <gravity/windows.hpp>
+#	include <gravity/windows.hpp>
 #endif
 
 #include <GL/glew.h>
@@ -24,11 +24,8 @@
 #	undef main
 #endif
 
-//#include <MYGUI/MyGUI.h>
-//#include <MYGUI/MyGUI_OpenGLPlatform.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <CEGUI/RendererModules/OpenGL/GL3Renderer.h>
+#include <CEGUI/CEGUI.h>
 
 #include "gravity/game/logging.hpp"
 #include "gravity/game/world.hpp"
@@ -44,63 +41,154 @@
 #include "gravity/cgame/resource/model.hpp"
 #include <gravity/cgame/asset/modelasset.hpp>
 #include <gravity/cgame/component/graphics.hpp>
+#include <gravity/cgame/ui/ceguiphysfsresourceprovider.hpp>
 
-//#include <unistd.h>
+#include <sdl_scancode_to_dinput_mappings.h>
+
 using namespace Gravity;
-/*
-class StbImageLoader : public MyGUI::OpenGLImageLoader {
-private:
-	std::vector<uint8_t*> images;
-public:
-	StbImageLoader()
-	{}
 
-	~StbImageLoader()
-	{
-		for (uint8_t* image : images) {
-			stbi_image_free(image);
-		}
-	}
-
-	virtual void* loadImage(int& _width, int& _height, MyGUI::PixelFormat& _format, const std::string& _filename)
-	{
-		boost::optional<std::vector<uint8_t>> maybeBytes = ResourceLoader::OpenAsBytes(_filename);
-		if (maybeBytes) {
-			const std::vector<uint8_t>& bytes = *maybeBytes;
-			int width, height, component;
-
-			uint8_t* image = stbi_load_from_memory(&bytes[0], bytes.size(), &width, &height, &component, 0);
-			images.push_back(image);
-
-			LOG(trace) << "Loaded " << _filename;
-
-			return image;
-		} else {
-			LOG(error) << "Cannot load image " << _filename;
-			return nullptr;
-		}
-	}
-
-	virtual void saveImage(int _width, int _height, MyGUI::PixelFormat _format, void* _texture, const std::string& _filename)
-	{
-		LOG(trace) << "Saving image " << _filename;
-	}
-};
-*/
-
-#include <CEGUI/RendererModules/OpenGL/GL3Renderer.h>
-#include <CEGUI/System.h>
-
-#include "gravity/cgame/ui/ceguiphysfsresourceprovider.hpp"
-
-void GuiInit()
+CEGUI::Key::Scan toCEGUIKey(SDL_Scancode key)
 {
-	CEGUI::OpenGL3Renderer& myRenderer = CEGUI::OpenGL3Renderer::create();
-	PhysFSResourceProvider* rp = new PhysFSResourceProvider();
-	CEGUI::System::create(myRenderer, static_cast<CEGUI::ResourceProvider*>(rp), NULL, NULL, NULL, "", "log.txt");
+	return static_cast<CEGUI::Key::Scan>(scanCodeToKeyNum[static_cast<int>(key)]);
+}
 
-	//set Resource Group directories and load data
-	//...
+void injectUTF8Text(const char* utf8str)
+{
+	static SDL_iconv_t cd = SDL_iconv_t(-1);
+
+	if (cd == SDL_iconv_t(-1))
+	{
+		// note: just "UTF-32" doesn't work as toFormat, because then you get BOMs, which we don't want.
+		const char* toFormat = "UTF-32LE"; // TODO: what does CEGUI expect on big endian machines?
+		cd = SDL_iconv_open(toFormat, "UTF-8");
+		if (cd == SDL_iconv_t(-1))
+		{
+			std::cerr << "Couldn't initialize SDL_iconv for UTF-8 to UTF-32!" << std::endl;
+			return;
+		}
+	}
+
+	// utf8str has at most SDL_TEXTINPUTEVENT_TEXT_SIZE (32) chars,
+	// so we won't have have more utf32 chars than that
+	Uint32 utf32buf[SDL_TEXTINPUTEVENT_TEXT_SIZE] = { 0 };
+
+	// we'll convert utf8str to a utf32 string, saved in utf32buf.
+	// the utf32 chars will be injected into cegui
+
+	size_t len = strlen(utf8str);
+
+	size_t inbytesleft = len;
+	size_t outbytesleft = 4 * SDL_TEXTINPUTEVENT_TEXT_SIZE; // *4 because utf-32 needs 4x as much space as utf-8
+	char* outbuf = (char*)utf32buf;
+	size_t n = SDL_iconv(cd, &utf8str, &inbytesleft, &outbuf, &outbytesleft);
+
+	if (n == size_t(-1)) // some error occured during iconv
+	{
+		std::cerr << "Converting UTF-8 string " << utf8str << " from SDL_TEXTINPUT to UTF-32 failed!" << std::endl;
+	}
+
+	for (int i = 0; i < SDL_TEXTINPUTEVENT_TEXT_SIZE; ++i)
+	{
+		if (utf32buf[i] == 0)
+			break; // end of string
+
+		CEGUI::System::getSingleton().getDefaultGUIContext().injectChar(utf32buf[i]);
+	}
+
+	// reset cd so it can be used again
+	SDL_iconv(cd, NULL, &inbytesleft, NULL, &outbytesleft);
+}
+
+
+void initCEGUI()
+{
+	using namespace CEGUI;
+
+	// create renderer and enable extra states
+	OpenGL3Renderer& cegui_renderer = OpenGL3Renderer::create(Sizef(800.f, 600.f));
+	cegui_renderer.enableExtraStateSettings(true);
+
+	// use physfs resource provider
+	PhysFSResourceProvider* rp = new PhysFSResourceProvider();
+
+	// create CEGUI system object
+	System::create(cegui_renderer, static_cast<CEGUI::ResourceProvider*>(rp));
+
+	// setup resource directories
+	//DefaultResourceProvider* rp = static_cast<DefaultResourceProvider*>(System::getSingleton().getResourceProvider());
+	rp->setResourceGroupDirectory("schemes", "cegui/schemes/");
+	rp->setResourceGroupDirectory("imagesets", "cegui/imagesets/");
+	rp->setResourceGroupDirectory("fonts", "cegui/fonts/");
+	rp->setResourceGroupDirectory("layouts", "cegui/layouts/");
+	rp->setResourceGroupDirectory("looknfeels", "cegui/looknfeel/");
+	rp->setResourceGroupDirectory("lua_scripts", "cegui/lua_scripts/");
+	rp->setResourceGroupDirectory("schemas", "cegui/xml_schemas/");
+
+	// set default resource groups
+	ImageManager::setImagesetDefaultResourceGroup("imagesets");
+	Font::setDefaultResourceGroup("fonts");
+	Scheme::setDefaultResourceGroup("schemes");
+	WidgetLookManager::setDefaultResourceGroup("looknfeels");
+	WindowManager::setDefaultResourceGroup("layouts");
+	ScriptModule::setDefaultResourceGroup("lua_scripts");
+
+	//XMLParser* parser = System::getSingleton().getXMLParser();
+	//if (parser->isPropertyPresent("SchemaDefaultResourceGroup"))
+	//	parser->setProperty("SchemaDefaultResourceGroup", "schemas");
+
+	// load TaharezLook scheme and DejaVuSans-10 font
+	SchemeManager::getSingleton().createFromFile("TaharezLook.scheme", "schemes");
+	FontManager::getSingleton().createFromFile("DejaVuSans-10.font");
+
+	// set default font and cursor image and tooltip type
+	System::getSingleton().getDefaultGUIContext().setDefaultFont("DejaVuSans-10");
+	System::getSingleton().getDefaultGUIContext().getMouseCursor().setDefaultImage("TaharezLook/MouseArrow");
+	System::getSingleton().getDefaultGUIContext().setDefaultTooltipType("TaharezLook/Tooltip");
+}
+
+
+void initWindows()
+{
+	using namespace CEGUI;
+
+	/////////////////////////////////////////////////////////////
+	// Add your gui initialisation code in here.
+	// You can use the following code as an inspiration for
+	// creating your own windows.
+	// But you should preferably use layout loading because you won't
+	// have to recompile everytime you change the layout.
+	/////////////////////////////////////////////////////////////
+
+	// load layout
+	Window* root = WindowManager::getSingleton().loadLayoutFromFile("application_templates.layout");
+	System::getSingleton().getDefaultGUIContext().setRootWindow(root);
+}
+
+// convert SDL mouse button to CEGUI mouse button
+CEGUI::MouseButton SDLtoCEGUIMouseButton(const Uint8& button)
+{
+	using namespace CEGUI;
+
+	switch (button)
+	{
+	case SDL_BUTTON_LEFT:
+		return LeftButton;
+
+	case SDL_BUTTON_MIDDLE:
+		return MiddleButton;
+
+	case SDL_BUTTON_RIGHT:
+		return RightButton;
+
+	case SDL_BUTTON_X1:
+		return X1Button;
+
+	case SDL_BUTTON_X2:
+		return X2Button;
+
+	default:
+		return NoButton;
+	}
 }
 
 int main(int argc, char* argv[])
@@ -109,8 +197,8 @@ int main(int argc, char* argv[])
     ResourceManager mgr;
     Display display(mgr);
     display.Init();
-
-	GuiInit();
+	initCEGUI();
+	display.Init2();
 
 	LOG(info) << "our bits is " << sizeof(void*);
 
@@ -150,35 +238,63 @@ int main(int argc, char* argv[])
     display.SetCamera(camera);
 
     BodyPtr bulletResource = mgr.Load<Body>("bodies/bullet.json");
-	/*
-	StbImageLoader imageLoader;
 
-	MyGUI::OpenGLPlatform platform;
-	platform.initialise(&imageLoader);
 
-	MyGUI::Gui gui;
-	gui.initialise();
+	glm::tvec2<int> windowSize = display.GetWindowSize();
+	CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(windowSize.x, windowSize.y));
 
-	MyGUI::LayoutManager::getInstance().loadLayout("D:/Dropbox/Projects/gravity-ng/data/testlayout.xml");
-	*/
-	//platform.initialise(&il);
+	initWindows();
+	CEGUI::OpenGL3Renderer* renderer = static_cast<CEGUI::OpenGL3Renderer*>(CEGUI::System::getSingleton().getRenderer());
+	
+	LOG(info) << glGetString(GL_VERSION);
+
+	
+
+	float time = SDL_GetTicks() / 1000.f;
+
 
     while (running) {
         Uint32 now = SDL_GetTicks();
 
         display.Clear();
 
-        display.DrawEntity(entity);
+
+		//glClear(GL_COLOR_BUFFER_BIT);
+
+		// inject time pulses
+		const float newtime = SDL_GetTicks() / 1000.f;
+		const float time_elapsed = newtime - time;
+		CEGUI::System::getSingleton().injectTimePulse(time_elapsed);
+		CEGUI::System::getSingleton().getDefaultGUIContext().injectTimePulse(time_elapsed);
+		time = newtime;
+
+
+
+
+
+       display.DrawEntity(entity);
         display.DrawEntity(entity2);
-        for (std::size_t i = 0; i < bulletEntities.size(); i++) {
-            display.DrawEntity(*bulletEntities[i]);
-        }
+    //    for (std::size_t i = 0; i < bulletEntities.size(); i++) {
+     //       display.DrawEntity(*bulletEntities[i]);
+     //   }
 
         display.Present();
 
+
+		// render gui
+		renderer->beginRendering();
+		CEGUI::System& sys = CEGUI::System::getSingleton();
+		sys.renderAllGUIContexts();
+		renderer->endRendering();
+
+		// swap buffers
+		SDL_GL_SwapWindow(display.window);
+
+
+
         /* Handle input and events: */
         SDL_Event event;
-        //const Uint8* states = SDL_GetKeyboardState(NULL);
+       // const Uint8* states = SDL_GetKeyboardState(NULL);
 
 
         int rotate = 0;
@@ -219,6 +335,8 @@ int main(int argc, char* argv[])
                     bulletPhysics->GetPhysicsBody().ApplyForceToCenter(b2Vec2(v.x, v.y), true);
                 }
 
+				CEGUI::System::getSingleton().getDefaultGUIContext().injectKeyDown(toCEGUIKey(event.key.keysym.scancode));
+
                 break;
             case(SDL_KEYUP):
                 if (event.key.keysym.scancode == SDL_SCANCODE_LEFT) {
@@ -230,7 +348,42 @@ int main(int argc, char* argv[])
                 if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
                     upPressed = false;
                 }
+
+				CEGUI::System::getSingleton().getDefaultGUIContext().injectKeyUp(toCEGUIKey(event.key.keysym.scancode));
                 break;
+			
+			case SDL_MOUSEMOTION:
+				CEGUI::System::getSingleton().getDefaultGUIContext().injectMousePosition(static_cast<float>(event.motion.x),
+					static_cast<float>(event.motion.y));
+				break;
+
+			case SDL_MOUSEBUTTONDOWN:
+				CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseButtonDown(SDLtoCEGUIMouseButton(event.button.button));
+				break;
+
+			case SDL_MOUSEBUTTONUP:
+				CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseButtonUp(SDLtoCEGUIMouseButton(event.button.button));
+				break;
+
+			case SDL_MOUSEWHEEL:
+				CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseWheelChange(static_cast<float>(event.wheel.y));
+				break;
+
+			case SDL_TEXTINPUT:
+				injectUTF8Text(event.text.text);
+				break;
+			case SDL_WINDOWEVENT:
+				if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+				{
+					CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(static_cast<float>(event.window.data1),
+						static_cast<float>(event.window.data2)));
+					glViewport(0, 0, event.window.data1, event.window.data2);
+				}
+				else if (event.window.event == SDL_WINDOWEVENT_LEAVE)
+				{
+					CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseLeaves();
+				}
+				break;
             }
         }
 
@@ -276,16 +429,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
-/*#ifdef _WIN32
-#include <windows.h>
-int CALLBACK WinMain(
-  _In_  HINSTANCE hInstance,
-  _In_  HINSTANCE hPrevInstance,
-  _In_  LPSTR lpCmdLine,
-  _In_  int nCmdShow
-)
-{
-    main();
-}
-#endif*/

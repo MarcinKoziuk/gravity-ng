@@ -14,6 +14,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <glm/vec2.hpp>
+
 #include <SDL2/SDL.h>
 
 #include "gravity/game/entity.hpp"
@@ -24,7 +26,7 @@
 namespace Gravity {
 
 class Display : private boost::noncopyable {
-private:
+public:
     ResourceManager& resourceManager;
     bool isInitialized;
     SDL_Window* window;
@@ -46,9 +48,12 @@ public:
     void DrawEntity(const Entity& entity);
 
     bool Init();
+	bool Init2();
 
     SDL_Window* GetWindow()
     { return window; }
+
+	glm::tvec2<int> GetWindowSize();
 };
 
 } // namespace Gravity

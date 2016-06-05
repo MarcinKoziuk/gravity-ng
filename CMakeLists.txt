@@ -47,8 +47,15 @@ file(GLOB_RECURSE GRAVITY_CLIENT_SRC "src/client/*.cpp")
 file(GLOB_RECURSE GRAVITY_SERVER_H "include/gravity/server/*.hpp")
 file(GLOB_RECURSE GRAVITY_SERVER_SRC "src/server/*.cpp")
 
-file(GLOB_RECURSE EXTLIBS_GAME_H "extlibs/clipper/*.hpp")
-file(GLOB_RECURSE EXTLIBS_GAME_SRC "extlibs/clipper/*.cpp")
+file(GLOB_RECURSE EXTLIBS_GAME_H
+	"extlibs/clipper/*.hpp"
+	"extlibs/nanovg/*.h"
+
+)
+file(GLOB_RECURSE EXTLIBS_GAME_SRC
+	"extlibs/clipper/*.cpp"
+	"extlibs/nanovg/*.c"
+)
 
 file(GLOB_RECURSE EXTLIBS_DEV_H
     "extlibs/nanosvg/*.h"
@@ -56,6 +63,7 @@ file(GLOB_RECURSE EXTLIBS_DEV_H
     "extlibs/poly2tri/*.h"
     "extlibs/rapidxml/*.hpp"
 	"extlibs/stb_image/stb_image.h"
+	"extlibs/scancodes/sdl_scancode_to_dinput_mappings.h"
 )
 file(GLOB_RECURSE EXTLIBS_DEV_SRC
     "extlibs/nanosvg/*.c"
@@ -168,8 +176,10 @@ include_directories("include")
 include_directories(SYSTEM "extlibs/physfs/include")
 include_directories(SYSTEM "extlibs/poly2tri")
 include_directories(SYSTEM "extlibs/nanosvg")
+include_directories(SYSTEM "extlibs/nanovg")
 include_directories(SYSTEM "extlibs/rapidxml")
 include_directories(SYSTEM "extlibs/stb_image")
+include_directories(SYSTEM "extlibs/scancodes")
 
 # --------------
 

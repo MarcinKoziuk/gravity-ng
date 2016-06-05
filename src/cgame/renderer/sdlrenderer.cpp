@@ -38,8 +38,8 @@ void SDLRenderer::Present()
 
 void SDLRenderer::DrawLine(const glm::vec2& p1, const glm::vec2& p2)
 {
-	const int w = SCALE_FACTOR;
-	const int h = SCALE_FACTOR;
+	const double w = SCALE_FACTOR;
+	const double h = SCALE_FACTOR;
 
 	SDL_RenderDrawLine(sdlRenderer,
 		(p1.x*w) + LOGICAL_RENDER_WIDTH,
@@ -53,7 +53,7 @@ void SDLRenderer::DrawTriangles(const std::vector<glm::vec2>& vertices)
 {
     assert((vertices.size() % 3) == 0);
 
-    SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 255, 1.0);
+    SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 255, 255);
 
     for (std::size_t i = 0; i < vertices.size()/3; i++) {
         const glm::vec2* v = &vertices[i * 3];
