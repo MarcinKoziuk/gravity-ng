@@ -1,12 +1,12 @@
 /*
-* cgame/asset/modelasset.hpp
+* cgame/asset/model.hpp
 *
 * Copyright (c) 2016
 * Marcin Koziuk <marcin.koziuk@gmail.com>
 */
 
-#ifndef GRAVITY_CGAME_ASSET_MODELASSET_HPP
-#define GRAVITY_CGAME_ASSET_MODELASSET_HPP
+#ifndef GRAVITY_CGAME_ASSET_MODEL_HPP
+#define GRAVITY_CGAME_ASSET_MODEL_HPP
 
 #include <string>
 #include <vector>
@@ -16,26 +16,27 @@
 
 #include <glm/vec2.hpp>
 
-#include <gravity/game/asset/bodyasset.hpp>
+#include <gravity/game/asset/body.hpp>
 
 #include <gravity/cgame/vectorpath.hpp>
 
 namespace Gravity {
+namespace Asset {
 
 static const char MAIN_GROUP_LABEL[] = "model";
 
-class ModelAsset : public BodyAsset {
+class Model : public Body {
 private:
 	std::map<std::string, std::vector<VectorPathSet>> pathGroups;
 
-	virtual TransformProps LoadImpl(const YAML::Node& root, const NSVGimage* image);
+	virtual TransformProps LoadImpl(const YAML::Node& root, const NSVGimage& image);
 	void LoadShape(const NSVGshape* shape, const TransformProps& tp);
 	std::vector<VectorPath> ShapeToVectorPaths(const NSVGshape* shape, const TransformProps& tp);
 
 public:
-	ModelAsset(const std::string& path);
+	Model(const std::string& path);
 
-	virtual ~ModelAsset();
+	virtual ~Model();
 
 	virtual std::size_t CalculateSize() const;
 
@@ -44,6 +45,7 @@ public:
 	const std::map<std::string, std::vector<VectorPathSet>>& GetPathGroups() const;
 };
 
+} // namespace Asset
 } // namespace Gravity
 
-#endif /* GRAVITY_CGAME_ASSET_MODELASSET_HPP */
+#endif /* GRAVITY_CGAME_ASSET_MODEL_HPP */

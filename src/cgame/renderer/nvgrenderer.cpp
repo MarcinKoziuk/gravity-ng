@@ -9,10 +9,12 @@
 
 #include <GL/glew.h>
 
-#include <SDL/SDL_gpu.h>
+#include <SDL2/SDL.h>
+
 #include <nanovg.h>
 
-#define NANOVG_GL3 1
+//#define NANOVG_GL3 1
+#define NANOVG_GL2 1
 #define NANOVG_GL_IMPLEMENTATION 1
 #include <nanovg_gl.h>
 
@@ -32,12 +34,14 @@ NvgRenderer::NvgRenderer(SDL_Window* window)
 
 NvgRenderer::~NvgRenderer()
 {
-	nvgDeleteGL3(ctx);
+	//nvgDeleteGL3(ctx);
+	nvgDeleteGL2(ctx);
 }
 
 bool NvgRenderer::Init()
 {
-	ctx = nvgCreateGL3(/*NVG_ANTIALIAS |*/ NVG_STENCIL_STROKES | NVG_DEBUG);
+	//ctx = nvgCreateGL3(/*NVG_ANTIALIAS |*/ NVG_STENCIL_STROKES | NVG_DEBUG);
+	ctx = nvgCreateGL2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
 
 	return ctx != nullptr;
 }

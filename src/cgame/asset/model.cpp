@@ -1,5 +1,5 @@
 /*
-* game/asset/modelasset.cpp
+* game/asset/model.cpp
 *
 * Copyright (c) 2016
 * Marcin Koziuk <marcin.koziuk@gmail.com>
@@ -13,24 +13,25 @@
 
 #include <gravity/dev/casteljau.hpp>
 
-#include <gravity/cgame/asset/modelasset.hpp>
+#include <gravity/cgame/asset/model.hpp>
 
 namespace Gravity {
+namespace Asset {
 
-ModelAsset::ModelAsset(const std::string& path)
-	: BodyAsset()
+Model::Model(const std::string& path)
+	: Body()
 {
 	Load(path);
 }
 
-ModelAsset::~ModelAsset()
+Model::~Model()
 {}
 
-BodyAsset::TransformProps ModelAsset::LoadImpl(const YAML::Node& root, const NSVGimage* image)
+Body::TransformProps Model::LoadImpl(const YAML::Node& root, const NSVGimage& image)
 {
-	TransformProps tp = BodyAsset::LoadImpl(root, image);
+	TransformProps tp = Body::LoadImpl(root, image);
 
-	for (const NSVGshape* shape = image->shapes; shape != nullptr; shape = shape->next) {
+	for (const NSVGshape* shape = image.shapes; shape != nullptr; shape = shape->next) {
 		const char* group = shape->groupLabel;
 
 		if (std::strcmp(group, ORIGIN_GROUP_LABEL) == 0 ||
@@ -44,7 +45,7 @@ BodyAsset::TransformProps ModelAsset::LoadImpl(const YAML::Node& root, const NSV
 	return tp;
 }
 
-void ModelAsset::LoadShape(const NSVGshape* shape, const BodyAsset::TransformProps& tp)
+void Model::LoadShape(const NSVGshape* shape, const Body::TransformProps& tp)
 {
 	const std::string groupLabel = shape->groupLabel;
 
@@ -75,7 +76,7 @@ void ModelAsset::LoadShape(const NSVGshape* shape, const BodyAsset::TransformPro
 	
 }
 
-std::vector<VectorPath> ModelAsset::ShapeToVectorPaths(const NSVGshape* shape, const TransformProps& tp)
+std::vector<VectorPath> Model::ShapeToVectorPaths(const NSVGshape* shape, const TransformProps& tp)
 {
 	std::vector<VectorPath> paths;
 
@@ -121,19 +122,20 @@ std::vector<VectorPath> ModelAsset::ShapeToVectorPaths(const NSVGshape* shape, c
 	return paths;
 }
 
-const std::map<std::string, std::vector<VectorPathSet>>& ModelAsset::GetPathGroups() const
+const std::map<std::string, std::vector<VectorPathSet>>& Model::GetPathGroups() const
 {
 	return pathGroups;
 }
 
-std::size_t ModelAsset::CalculateSize() const
+std::size_t Model::CalculateSize() const
 {
 	return 0L;
 }
 
-const char* ModelAsset::GetAssetType() const
+const char* Model::GetAssetType() const
 {
 	return "Model";
 }
 
+} // namespace Asset
 } // namespace Gravity

@@ -11,6 +11,7 @@
 #include <cstddef>
 
 namespace Gravity {
+namespace Asset {
 
 class IAsset {
 public:
@@ -23,6 +24,7 @@ public:
     virtual const char* GetAssetType() const = 0;
 };
 
+} // namespace Asset
 } // namespace Gravity
 
 #endif /* GRAVITY_GAME_ASSET_IASSET_HPP */

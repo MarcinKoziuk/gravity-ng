@@ -10,33 +10,14 @@
 #include <Box2D/Box2D.h>
 
 #include "gravity/game/component/physics.hpp"
-#include "gravity/game/resource/body.hpp"
+#include "gravity/game/asset/body.hpp"
 
 namespace Gravity {
 namespace Component {
 
 const std::size_t Physics::family = 2122559316L;
 
-Physics::Physics(World& world, BodyPtr resource, glm::vec2 pos)
-	: world(world)
-    , bodyResource(resource)
-{
-    b2BodyDef bodyDef;
-    bodyDef.type = b2_dynamicBody;
-    bodyDef.position = b2Vec2(pos.x, pos.y);
-
-    b2World* physicsWorld = world.GetPhysics();
-    physicsBody = physicsWorld->CreateBody(&bodyDef);
-
-    std::vector<b2FixtureDef> fixtureDefs = resource->GetFixtureDefs();
-    for (std::size_t i = 0; i < fixtureDefs.size(); i++) {
-        b2FixtureDef* fixtureDef = &fixtureDefs[i];
-        fixtureDef->density = 1.f;
-        physicsBody->CreateFixture(&fixtureDefs[i]);
-    }
-}
-
-Physics::Physics(World& world, const BodyAsset& bodyAsset, glm::vec2 pos)
+Physics::Physics(World& world, const Asset::Body& bodyAsset, glm::vec2 pos)
 	: world(world)
 {
 	b2BodyDef bodyDef;

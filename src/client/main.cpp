@@ -24,22 +24,22 @@
 #	undef main
 #endif
 
+#include <CEGUI/RendererModules/OpenGL/GLRenderer.h>
 #include <CEGUI/RendererModules/OpenGL/GL3Renderer.h>
 #include <CEGUI/CEGUI.h>
+
+#include <gravity/gravity.hpp>
 
 #include "gravity/game/logging.hpp"
 #include "gravity/game/world.hpp"
 #include "gravity/game/entity.hpp"
 #include "gravity/game/component/physics.hpp"
 #include "gravity/game/resource/resourceloader.hpp"
-#include "gravity/game/resource/resourcemanager.hpp"
-#include "gravity/game/resource/body.hpp"
-#include <gravity/game/asset/bodyasset.hpp>
+#include <gravity/game/asset/body.hpp>
 
 #include "gravity/cgame/display.hpp"
 #include "gravity/cgame/camera.hpp"
-#include "gravity/cgame/resource/model.hpp"
-#include <gravity/cgame/asset/modelasset.hpp>
+#include <gravity/cgame/asset/model.hpp>
 #include <gravity/cgame/component/graphics.hpp>
 #include <gravity/cgame/ui/ceguiphysfsresourceprovider.hpp>
 
@@ -104,15 +104,23 @@ void initCEGUI()
 {
 	using namespace CEGUI;
 
-	// create renderer and enable extra states
-	OpenGL3Renderer& cegui_renderer = OpenGL3Renderer::create(Sizef(800.f, 600.f));
-	cegui_renderer.enableExtraStateSettings(true);
-
 	// use physfs resource provider
 	PhysFSResourceProvider* rp = new PhysFSResourceProvider();
 
-	// create CEGUI system object
-	System::create(cegui_renderer, static_cast<CEGUI::ResourceProvider*>(rp));
+	// create renderer and enable extra states
+	if (GRAVITY_USE_OPENGL3) {
+		OpenGL3Renderer& cegui_renderer = OpenGL3Renderer::create(Sizef(800.f, 600.f));
+		cegui_renderer.enableExtraStateSettings(true);
+
+		// create CEGUI system object
+		System::create(cegui_renderer, static_cast<CEGUI::ResourceProvider*>(rp));
+	} else {
+		OpenGLRenderer& cegui_renderer = OpenGLRenderer::create(Sizef(800.f, 600.f));
+		cegui_renderer.enableExtraStateSettings(true);
+
+		// create CEGUI system object
+		System::create(cegui_renderer, static_cast<CEGUI::ResourceProvider*>(rp));
+	}
 
 	// setup resource directories
 	//DefaultResourceProvider* rp = static_cast<DefaultResourceProvider*>(System::getSingleton().getResourceProvider());
@@ -194,34 +202,39 @@ CEGUI::MouseButton SDLtoCEGUIMouseButton(const Uint8& button)
 int main(int argc, char* argv[])
 {
     ResourceLoader::Init();
-    ResourceManager mgr;
-    Display display(mgr);
+    Display display;
     display.Init();
 	initCEGUI();
 	display.Init2();
 
 	LOG(info) << "our bits is " << sizeof(void*);
 
-    BodyPtr bodyResource = mgr.Load<Body>("bodies/ship.json");
+    //BodyPtr bodyResource = mgr.Load<Body>("bodies/ship.json");
 
-	std::shared_ptr<ModelAsset> shippie = std::make_shared<ModelAsset>("models/ships/interceptor-0/interceptor-0.yml");
+	std::shared_ptr<Asset::Model> shippie = std::make_shared<Asset::Model>("models/ships/interceptor-0/interceptor-0.yml");
+	std::shared_ptr<Asset::Model> plannie = std::make_shared<Asset::Model>("models/planets/simple/simple.yml");
 
     World world;
     Entity entity(world);
     Entity entity2(world);
+	Entity planet(world);
     std::vector<Entity*> bulletEntities;
 	Component::Graphics g1(shippie);
 	Component::Graphics g2(shippie);
+	Component::Graphics g3(plannie);
 
     Component::Physics physicsComponent(entity.GetWorld(), *shippie, glm::vec2(0, 0));
     Component::Physics physicsComponent2(entity.GetWorld(), *shippie, glm::vec2(6, 6));
+	Component::Physics physicsComponent3(planet.GetWorld(), *plannie, glm::vec2(-5, 0));
     entity.AddComponent<Component::Physics>(&physicsComponent);
     entity2.AddComponent<Component::Physics>(&physicsComponent2);
+	planet.AddComponent<Component::Physics>(&physicsComponent3);
 
 	entity.AddComponent<Component::Graphics>(&g1);
 	entity2.AddComponent<Component::Graphics>(&g2);
+	planet.AddComponent<Component::Graphics>(&g3);
 
-    ModelPtr model = mgr.Load<Model>("models/ship.json");
+    //ModelPtr model = mgr.Load<Model>("models/ship.json");
 
     bool running = true;
 
@@ -237,14 +250,14 @@ int main(int argc, char* argv[])
     Camera camera(glm::vec2(24, 16), glm::vec2(pos.x, pos.y));
     display.SetCamera(camera);
 
-    BodyPtr bulletResource = mgr.Load<Body>("bodies/bullet.json");
+    //BodyPtr bulletResource = mgr.Load<Body>("bodies/bullet.json");
 
 
 	glm::tvec2<int> windowSize = display.GetWindowSize();
 	CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(windowSize.x, windowSize.y));
 
 	initWindows();
-	CEGUI::OpenGL3Renderer* renderer = static_cast<CEGUI::OpenGL3Renderer*>(CEGUI::System::getSingleton().getRenderer());
+	CEGUI::OpenGLRendererBase* renderer = static_cast<CEGUI::OpenGLRendererBase*>(CEGUI::System::getSingleton().getRenderer());
 	
 	LOG(info) << glGetString(GL_VERSION);
 
@@ -274,6 +287,7 @@ int main(int argc, char* argv[])
 
        display.DrawEntity(entity);
         display.DrawEntity(entity2);
+		display.DrawEntity(planet);
     //    for (std::size_t i = 0; i < bulletEntities.size(); i++) {
      //       display.DrawEntity(*bulletEntities[i]);
      //   }
@@ -316,7 +330,7 @@ int main(int argc, char* argv[])
                     upPressed = true;
                 }
                 if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-
+					/*
                     Entity* bulletEntity = new Entity(world);
                     b2Vec2 pos = physicsComponent.GetPhysicsBody().GetPosition();
                     glm::vec2 v1(0.f, 1.f);
@@ -332,7 +346,7 @@ int main(int argc, char* argv[])
                     v += glm::vec2(body.GetLinearVelocity().x, body.GetLinearVelocity().y);
 
                     bulletPhysics->GetPhysicsBody().SetBullet(true);
-                    bulletPhysics->GetPhysicsBody().ApplyForceToCenter(b2Vec2(v.x, v.y), true);
+                    bulletPhysics->GetPhysicsBody().ApplyForceToCenter(b2Vec2(v.x, v.y), true);*/
                 }
 
 				CEGUI::System::getSingleton().getDefaultGUIContext().injectKeyDown(toCEGUIKey(event.key.keysym.scancode));

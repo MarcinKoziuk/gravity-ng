@@ -1,16 +1,19 @@
 /*
- * game/asset/bodyasset.hpp
+ * game/asset/body.hpp
  *
  * Copyright (c) 2014, 2015
  * Marcin Koziuk <marcin.koziuk@gmail.com>
  */
 
-#ifndef GRAVITY_GAME_ASSET_BODYASSET_HPP
-#define GRAVITY_GAME_ASSET_BODYASSET_HPP
+#ifndef GRAVITY_GAME_ASSET_BODY_HPP
+#define GRAVITY_GAME_ASSET_BODY_HPP
 
 #include <vector>
+#include <utility>
 
 #include <boost/noncopyable.hpp>
+
+#include <glm/vec2.hpp>
 
 #include <yaml-cpp/node/node.h>
 
@@ -23,11 +26,12 @@ struct NSVGimage;
 struct NSVGshape;
 
 namespace Gravity {
+namespace Asset {
 
 static const char ORIGIN_GROUP_LABEL[] = "origin";
 static const char BODY_GROUP_LABEL[] = "body";
 
-class BodyAsset : public IAsset, private boost::noncopyable {
+class Body : public IAsset, private boost::noncopyable {
 protected:
 	struct TransformProps {
 		glm::vec2 origin;
@@ -37,13 +41,16 @@ protected:
 		{}
 	};
 
-	BodyAsset();
+	Body();
 
 private:
     b2Shape* MakePolygonShape(const std::vector<glm::vec2>& points);
+	void ConstructFixtureDef(const b2FixtureDef& standardFixtureDef, glm::vec2 pos, double radius);
     void ConstructFixtureDef(const b2FixtureDef& standardFixtureDef, const std::vector<glm::vec2>& points);
     void LoadShape(const b2FixtureDef& standardFixtureDef, const NSVGshape* shape, const TransformProps& tp);
     b2FixtureDef MakeStandardFixtureDef(const YAML::Node& root);
+	bool IsCircle(const NSVGshape* shape);
+	std::pair<glm::vec2, double> ShapeToCircle(const NSVGshape* shape, const TransformProps& tp);
 	std::vector<std::vector<glm::vec2>> ShapeToLines(const NSVGshape* shape, const TransformProps& tp);
 
 protected:
@@ -54,12 +61,12 @@ protected:
 	std::vector<b2Shape*> physicsShapes;
 
 	void Load(const std::string& path);
-	virtual TransformProps LoadImpl(const YAML::Node& root, const NSVGimage* image);
+	virtual TransformProps LoadImpl(const YAML::Node& root, const NSVGimage& image);
 
 public:
-    BodyAsset(const std::string& path);
+    Body(const std::string& path);
 
-    virtual ~BodyAsset();
+    virtual ~Body();
 
     virtual bool IsLoaded() const;
 
@@ -70,6 +77,7 @@ public:
 	const std::vector<b2FixtureDef>& GetFixtureDefs() const;
 };
 
+} // namespace Asset
 } // namespace Gravity
 
-#endif /* GRAVITY_GAME_ASSET_BODYASSET_HPP */
+#endif /* GRAVITY_GAME_ASSET_BODY_HPP */

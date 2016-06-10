@@ -1,5 +1,5 @@
 /*
- * game/asset/bodyasset.cpp
+ * game/asset/body.cpp
  *
  * Copyright (c) 2014, 2015
  * Marcin Koziuk <marcin.koziuk@gmail.com>
@@ -10,6 +10,7 @@
 #include <cstring>
 #include <vector>
 #include <utility>
+#include <limits>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
@@ -24,65 +25,64 @@
 #include <gravity/dev/casteljau.hpp>
 
 #include <gravity/game/logging.hpp>
-#include <gravity/game/asset/yamlasset.hpp>
-#include <gravity/game/asset/svgasset.hpp>
-#include <gravity/game/asset/bodyasset.hpp>
+#include <gravity/game/resource/resourceloader.hpp>
+#include <gravity/game/asset/body.hpp>
 
 namespace fs = boost::filesystem;
 
 namespace Gravity {
+namespace Asset {
 
-BodyAsset::BodyAsset(const std::string& path)
+Body::Body(const std::string& path)
 	: loaded(false)
 {
 	Load(path);
 }
 
-BodyAsset::BodyAsset()
+Body::Body()
 	: loaded(false)
 {}
 
-BodyAsset::~BodyAsset()
+Body::~Body()
 {
     for (b2Shape* shape : physicsShapes) {
         delete shape;
     }
 }
 
-void BodyAsset::Load(const std::string& path)
+void Body::Load(const std::string& path)
 {
 	this->path = path;
 
-	YAMLAsset yamlAsset(path);
+	boost::optional<YAML::Node> maybeNode = ResourceLoader::OpenAsYaml(path);
+	if (maybeNode) {
+		const YAML::Node& root = *maybeNode;
 
-	if (yamlAsset.IsLoaded()) {
 		fs::path yamlFsPath(path);
-		YAML::Node root = yamlAsset.GetRoot();
 		std::string svgFilename;
 
 		if (root["model"]) {
 			svgFilename = root["model"].as<std::string>();
-		}
-		else {
+		} else {
 			svgFilename = yamlFsPath.filename().replace_extension("svg").string();
 		}
 
 		const std::string svgPath = (yamlFsPath.parent_path() / svgFilename).string();
 
-		SVGAsset svgAsset(svgPath);
-		if (svgAsset.IsLoaded()) {
-			LoadImpl(root, svgAsset.GetImage());
+		NSVGimageUniquePtr nsvgImage = ResourceLoader::OpenAsSvg(svgPath);
+		if (nsvgImage) {
+			LoadImpl(root, *nsvgImage);
 			loaded = true;
 		}
 	}
 }
 
-bool BodyAsset::IsLoaded() const
+bool Body::IsLoaded() const
 {
 	return loaded;
 }
 
-b2Shape* BodyAsset::MakePolygonShape(const std::vector<glm::vec2>& points)
+b2Shape* Body::MakePolygonShape(const std::vector<glm::vec2>& points)
 {
     b2PolygonShape* shape = new b2PolygonShape();
     std::vector<b2Vec2> bVertices;
@@ -94,7 +94,19 @@ b2Shape* BodyAsset::MakePolygonShape(const std::vector<glm::vec2>& points)
     return shape;
 }
 
-void BodyAsset::ConstructFixtureDef(const b2FixtureDef& standardFixtureDef, const std::vector<glm::vec2>& points)
+void Body::ConstructFixtureDef(const b2FixtureDef& standardFixtureDef, glm::vec2 pos, double radius)
+{
+	b2FixtureDef fixtureDef = standardFixtureDef;
+	b2CircleShape* circle = new b2CircleShape();
+	circle->m_radius = radius;
+	circle->m_p = b2Vec2(pos.x, pos.y);
+
+	physicsShapes.push_back(circle);
+	fixtureDef.shape = circle;
+	fixtureDefs.push_back(fixtureDef);
+}
+
+void Body::ConstructFixtureDef(const b2FixtureDef& standardFixtureDef, const std::vector<glm::vec2>& points)
 {
     b2FixtureDef fixtureDef = standardFixtureDef;
     b2Shape* shape = MakePolygonShape(points);
@@ -104,7 +116,20 @@ void BodyAsset::ConstructFixtureDef(const b2FixtureDef& standardFixtureDef, cons
     fixtureDefs.push_back(fixtureDef);
 }
 
-std::vector<std::vector<glm::vec2>> BodyAsset::ShapeToLines(const NSVGshape* shape, const TransformProps& tp)
+std::pair<glm::vec2, double> Body::ShapeToCircle(const NSVGshape* shape, const TransformProps& tp)
+{
+	const NSVGpath* path = shape->paths;
+	double radius = (path->bounds[2] - path->bounds[0]) / 2.;
+	glm::vec2 pos(path->bounds[0] + radius, path->bounds[1] + radius);
+
+	radius *= tp.scale;
+	pos -= tp.origin;
+	pos *= tp.scale;
+
+	return std::pair<glm::vec2, double>(pos, radius);
+}
+
+std::vector<std::vector<glm::vec2>> Body::ShapeToLines(const NSVGshape* shape, const TransformProps& tp)
 {
 	std::vector<std::vector<glm::vec2>> lines;
 
@@ -169,16 +194,32 @@ std::vector<std::vector<glm::vec2>> BodyAsset::ShapeToLines(const NSVGshape* sha
 	return lines;
 }
 
-void BodyAsset::LoadShape(const b2FixtureDef& standardFixtureDef, const NSVGshape* shape, const BodyAsset::TransformProps& tp)
+bool Body::IsCircle(const NSVGshape* shape)
 {
-	const std::vector<std::vector<glm::vec2>> lines = ShapeToLines(shape, tp);
+	const NSVGpath* p = shape->paths;
+	const double diff = std::abs((p->bounds[2] - p->bounds[0]) - (p->bounds[3] - p->bounds[1]));
 
-	for (const std::vector<glm::vec2>& line : lines) {
-		ConstructFixtureDef(standardFixtureDef, line);
+	return p->closed
+		&& p->npts == 16
+		&& p->next == nullptr
+		&& diff < 0.001;
+}
+
+void Body::LoadShape(const b2FixtureDef& standardFixtureDef, const NSVGshape* shape, const Body::TransformProps& tp)
+{
+	if (IsCircle(shape)) {
+		const std::pair<glm::vec2, double> posAndRadius = ShapeToCircle(shape, tp);
+		ConstructFixtureDef(standardFixtureDef, posAndRadius.first, posAndRadius.second);
+	} else {
+		const std::vector<std::vector<glm::vec2>> lines = ShapeToLines(shape, tp);
+
+		for (const std::vector<glm::vec2>& line : lines) {
+			ConstructFixtureDef(standardFixtureDef, line);
+		}
 	}
 }
 
-b2FixtureDef BodyAsset::MakeStandardFixtureDef(const YAML::Node& root)
+b2FixtureDef Body::MakeStandardFixtureDef(const YAML::Node& root)
 {
     b2FixtureDef fixtureDef;
 
@@ -198,7 +239,7 @@ b2FixtureDef BodyAsset::MakeStandardFixtureDef(const YAML::Node& root)
     return fixtureDef;
 }
 
-BodyAsset::TransformProps BodyAsset::LoadImpl(const YAML::Node& root, const NSVGimage* image)
+Body::TransformProps Body::LoadImpl(const YAML::Node& root, const NSVGimage& image)
 {
 	TransformProps tp;
 	b2FixtureDef standardFixtureDef = MakeStandardFixtureDef(root);
@@ -208,7 +249,7 @@ BodyAsset::TransformProps BodyAsset::LoadImpl(const YAML::Node& root, const NSVG
 	}
 
 	// Must find origin first before parsing the rest
-	for (const NSVGshape* shape = image->shapes; shape != nullptr; shape = shape->next) {
+	for (const NSVGshape* shape = image.shapes; shape != nullptr; shape = shape->next) {
 		const char* group = shape->groupLabel;
 		if (std::strcmp(group, ORIGIN_GROUP_LABEL) == 0) {
 			NSVGpath* path = shape->paths;
@@ -217,7 +258,7 @@ BodyAsset::TransformProps BodyAsset::LoadImpl(const YAML::Node& root, const NSVG
 		}
 	}
 
-    for (const NSVGshape* shape = image->shapes; shape != nullptr; shape = shape->next) {
+    for (const NSVGshape* shape = image.shapes; shape != nullptr; shape = shape->next) {
         const char* group = shape->groupLabel;
         if (std::strcmp(group, BODY_GROUP_LABEL) == 0) {
             LoadShape(standardFixtureDef, shape, tp);
@@ -227,19 +268,20 @@ BodyAsset::TransformProps BodyAsset::LoadImpl(const YAML::Node& root, const NSVG
 	return tp;
 }
 
-const std::vector<b2FixtureDef>& BodyAsset::GetFixtureDefs() const
+const std::vector<b2FixtureDef>& Body::GetFixtureDefs() const
 {
 	return fixtureDefs;
 }
 
-std::size_t BodyAsset::CalculateSize() const
+std::size_t Body::CalculateSize() const
 {
     return 0L;
 }
 
-const char* BodyAsset::GetAssetType() const
+const char* Body::GetAssetType() const
 {
     return "Body";
 }
 
+} // namespace Asset
 } // namespace Gravity

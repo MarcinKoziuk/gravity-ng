@@ -22,15 +22,12 @@
 #include "gravity/game/resource/resourcemanager.hpp"
 #include "gravity/game/component/physics.hpp"
 #include "gravity/cgame/display.hpp"
-#include "gravity/cgame/renderer/glrenderer.hpp"
-#include "gravity/cgame/renderer/sdlrenderer.hpp"
 #include "gravity/cgame/renderer/nvgrenderer.hpp"
 #include "gravity/cgame/component/graphics.hpp"
 
 namespace Gravity {
 
-Display::Display(ResourceManager& resourceManager)
-    : resourceManager(resourceManager)
+Display::Display()
 {}
 
 Display::~Display()
@@ -49,7 +46,7 @@ bool Display::Init()
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
     window = SDL_CreateWindow("Window caption",

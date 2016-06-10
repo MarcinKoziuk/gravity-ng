@@ -20,8 +20,20 @@
 #include <physfs.hpp>
 
 #include <json/forwards.h>
+#include <yaml-cpp/node/node.h>
+
+extern "C" {
+	struct NSVGimage;
+	void nsvgDelete(NSVGimage*); 
+}
 
 namespace Gravity {
+
+struct NSVGimage_deleter {
+	void operator()(NSVGimage* p) { nsvgDelete(p); }
+};
+
+typedef std::unique_ptr<NSVGimage, NSVGimage_deleter> NSVGimageUniquePtr;
 
 class ResourceLoader {
 public:
@@ -40,7 +52,7 @@ public:
     };
 
     typedef std::shared_ptr<StreamWrapper> StreamWrapperPtr;
-
+	
     static void Init();
 
     static void Deinit();
@@ -49,9 +61,15 @@ public:
 
     static boost::optional<std::vector<char>>  LoadData(const std::string& key);
 
-    static boost::optional<StreamWrapperPtr>   OpenAsStream(const std::string& path);
+    static boost::optional<StreamWrapperPtr>          OpenAsStream(const std::string& path);
 
-    static boost::optional<std::vector<std::uint8_t>>  OpenAsBytes(const std::string& path);
+    static boost::optional<std::vector<std::uint8_t>> OpenAsBytes(const std::string& path);
+
+	static boost::optional<YAML::Node>                OpenAsYaml(const std::string& path);
+
+	static NSVGimageUniquePtr                         OpenAsSvg(const std::string& path);
+
+	static NSVGimageUniquePtr                         OpenAsSvg(const std::string& path, const std::string& units, float dpi);
 };
 
 } // namespace Gravity

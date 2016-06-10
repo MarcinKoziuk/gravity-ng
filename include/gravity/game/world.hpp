@@ -14,7 +14,6 @@
 
 #include <Box2D/Dynamics/b2World.h>
 
-#include "gravity/game/resource/resourcemanager.hpp"
 #include "gravity/game/entity.hpp"
 
 namespace Gravity {
@@ -23,7 +22,6 @@ class World {
 private:
     b2World physics;
     std::vector<Entity> entities;
-    ResourceManager resourceManager;
 
 public:
     World() : physics(b2Vec2(0, 0)) {}

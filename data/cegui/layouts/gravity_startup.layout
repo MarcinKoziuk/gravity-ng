@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<GUILayout version="4" >
+    <Window type="DefaultWindow" name="DefaultWindow" >
+        <Property name="Area" value="{{0,0},{0,0},{1,0},{1,0}}" />
+        <Property name="MaxSize" value="{{1,0},{1,0}}" />
+        <Window type="AlfiskoSkin/FrameWindow" name="FrameWindow2" >
+            <Property name="Area" value="{{0,64},{0,36},{0.3,-86},{0.3,158}}" />
+            <AutoWindow namePath="__auto_titlebar__" >
+                <Property name="AlwaysOnTop" value="false" />
+            </AutoWindow>
+            <Window type="HorizontalLayoutContainer" name="HorizontalLayoutContainer" >
+                <Property name="Area" value="{{0,0},{0,0},{1,0},{1,0}}" />
+                <Window type="AlfiskoSkin/Button" name="Button" >
+                    <Property name="Area" value="{{0,0},{0,0},{1,0},{0,32}}" />
+                    <Property name="Text" value="Start game" />
+                </Window>
+                <Window type="AlfiskoSkin/Button" name="Button2" >
+                    <Property name="Area" value="{{0,0},{0,32},{1,0},{0,64}}" />
+                    <Property name="Text" value="Quit" />
+                </Window>
+            </Window>
+        </Window>
+    </Window>
+</GUILayout>

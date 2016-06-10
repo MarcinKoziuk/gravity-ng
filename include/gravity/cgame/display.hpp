@@ -19,7 +19,6 @@
 #include <SDL2/SDL.h>
 
 #include "gravity/game/entity.hpp"
-#include "gravity/game/resource/resourcemanager.hpp"
 #include "gravity/cgame/renderer/irenderer.hpp"
 #include "gravity/cgame/camera.hpp"
 
@@ -27,7 +26,6 @@ namespace Gravity {
 
 class Display : private boost::noncopyable {
 public:
-    ResourceManager& resourceManager;
     bool isInitialized;
     SDL_Window* window;
     SDL_Renderer* sdlRenderer;
@@ -35,7 +33,7 @@ public:
     Camera* camera;
 
 public:
-    Display(ResourceManager& resourceManager);
+    Display();
 
     ~Display();
 

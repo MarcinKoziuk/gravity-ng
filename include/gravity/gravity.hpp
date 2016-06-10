@@ -17,4 +17,7 @@
 
 #define GRAVITY_DIRECTORY_NAME  GRAVITY_NAME_LOWER
 
+/* temp, make cmake option */
+#define GRAVITY_USE_OPENGL3 0
+
 #endif /* GRAVITY_GRAVITY_HPP */

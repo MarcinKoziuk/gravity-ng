@@ -13,20 +13,20 @@
 
 #include <gravity/game/component/icomponent.hpp>
 
-#include <gravity/cgame/asset/modelasset.hpp>
+#include <gravity/cgame/asset/model.hpp>
 
 namespace Gravity {
 namespace Component {
 
 class Graphics : public IComponent {
 private:
-	std::shared_ptr<ModelAsset> model;
+	std::shared_ptr<Asset::Model> model;
 	std::vector<const VectorPathSet*> pathSetsToRender;
 
 public:
 	static const std::size_t family;
 
-	Graphics(std::shared_ptr<ModelAsset> model);
+	Graphics(std::shared_ptr<Asset::Model> model);
 
 	~Graphics();
 

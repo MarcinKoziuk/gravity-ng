@@ -20,6 +20,8 @@
 #include <physfs.hpp>
 
 #include <json/reader.h>
+#include <yaml-cpp/yaml.h>
+#include <nanosvg.h>
 
 #include <gravity/gravity.hpp>
 #include <gravity/game/logging.hpp>
@@ -63,10 +65,10 @@ void ResourceLoader::Init()
     PHYSFS_init(GRAVITY_NAME);
 
 	int mounts = 0;
-	mounts += !!PHYSFS_mount("../gravity-ng/data", "/", true);
-	mounts += !!PHYSFS_mount("./data", "/", true);
-	mounts += !!PHYSFS_mount("./Debug/data", "/", true);
-	mounts += !!PHYSFS_mount("./Release/data", "/", true);
+	mounts += bool(PHYSFS_mount("../gravity-ng/data", "/", true));
+	mounts += bool(PHYSFS_mount("./data", "/", true));
+	mounts += bool(PHYSFS_mount("./Debug/data", "/", true));
+	mounts += bool(PHYSFS_mount("./Release/data", "/", true));
 
     if (!mounts) {
         LOG(fatal) << "Mounting of data directory failed";
@@ -108,6 +110,40 @@ optional<std::vector<std::uint8_t>> ResourceLoader::OpenAsBytes(const std::strin
         LOG(error) << "Resource not found: " << path;
         return none;
     }
+}
+
+optional<YAML::Node> ResourceLoader::OpenAsYaml(const std::string& path)
+{
+	boost::optional<ResourceLoader::StreamWrapperPtr> maybeIStream = ResourceLoader::OpenAsStream(path);
+
+	if (maybeIStream) {
+		try {
+			std::istream& is = ***maybeIStream;
+			return YAML::Load(is);
+		}
+		catch (...) {
+			LOG(error) << "Parsing yml file " << path << " failed";
+		}
+	}
+
+	return none;
+}
+
+NSVGimageUniquePtr ResourceLoader::OpenAsSvg(const std::string& path)
+{
+	return OpenAsSvg(path, "px", 96);
+}
+
+NSVGimageUniquePtr ResourceLoader::OpenAsSvg(const std::string& path, const std::string& units, float dpi)
+{
+	boost::optional<std::vector<uint8_t>> maybeBytes = ResourceLoader::OpenAsBytes(path);
+	if (maybeBytes) {
+		std::vector<uint8_t> bytes = *maybeBytes;
+		bytes.push_back(0);
+		return NSVGimageUniquePtr(nsvgParse((char *)(&bytes[0]), units.c_str(), dpi));
+	} else {
+		return nullptr;
+	}
 }
 
 optional<Json::Value> ResourceLoader::LoadJson(const string& key)

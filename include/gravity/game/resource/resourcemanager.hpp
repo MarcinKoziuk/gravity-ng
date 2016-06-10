@@ -9,7 +9,7 @@
 
 #ifndef GRAVITY_GAME_RESOURCE_RESOURCEMANAGER_HPP
 #define GRAVITY_GAME_RESOURCE_RESOURCEMANAGER_HPP
-
+ /*
 #include <string>
 #include <map>
 
@@ -48,5 +48,5 @@ public:
 #include "inline/resourcemanager.inl"
 
 } // namespace Gravity
-
+*/
 #endif /* GRAVITY_GAME_RESOURCE_RESOURCEMANAGER_HPP */

@@ -1,0 +1,5 @@
+scale: 0.01
+physics:
+    density: 10
+    restitution: 0.5
+    friction: 0.0

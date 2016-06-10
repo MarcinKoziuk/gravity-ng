@@ -95,6 +95,8 @@ static CEGUI::String Utf16ToString(const wchar_t* const utf16text)
 namespace Gravity
 {
 
+using namespace CEGUI;
+
 //----------------------------------------------------------------------------//
 void PhysFSResourceProvider::loadRawDataContainer(const String& filename,
 	RawDataContainer& output,

@@ -18,8 +18,7 @@
 #include <Box2D/Dynamics/b2Body.h>
 
 #include "gravity/game/world.hpp"
-#include "gravity/game/asset/bodyasset.hpp"
-#include "gravity/game/resource/body.hpp"
+#include "gravity/game/asset/body.hpp"
 #include "gravity/game/component/icomponent.hpp"
 
 namespace Gravity {
@@ -28,14 +27,12 @@ namespace Component {
 class Physics : public IComponent {
 private:
 	World& world;
-    BodyPtr bodyResource;
     b2Body* physicsBody;
 
 public:
     static const std::size_t family;
 
-    Physics(World& world, BodyPtr resource, glm::vec2 pos);
-	Physics(World& world, const BodyAsset& bodyAsset, glm::vec2 pos);
+	Physics(World& world, const Asset::Body& bodyAsset, glm::vec2 pos);
 
     ~Physics();
 
