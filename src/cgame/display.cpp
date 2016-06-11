@@ -46,14 +46,18 @@ bool Display::Init()
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	if (GLEW_VERSION_3_1) {
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	} else if (GLEW_VERSION_2_1) {
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	}
 
     window = SDL_CreateWindow("Window caption",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         1280, 800,
 		SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-
 
     if (window == NULL) {
         LOG(fatal) << "SDL Window creation failed: " << SDL_GetError();
@@ -89,7 +93,6 @@ bool Display::Init2()
 
 void Display::Clear()
 {
-   // SDL_RenderClear(sdlRenderer);
     renderer->Clear();
 }
 
@@ -146,7 +149,6 @@ void Display::DrawEntity(const Entity& entity)
 
 					b2Vec2 pos = physicsBody.GetPosition();
 					vertex += glm::vec2(pos.x, pos.y) - camera->GetPos();
-					//vertex /= glm::vec2(6.4 * 3, 4.8 * 3);
 					vertices.push_back(vertex);
 				}
 
@@ -188,13 +190,20 @@ void Display::DrawEntity(const Entity& entity)
 void Display::Present()
 {
     renderer->Present();
+}
 
-    /*SDL_SetRenderDrawColor(sdlRenderer, 255, 0, 0, 1.0);
-    SDL_RenderDrawLine(sdlRenderer, 10, 10, 40, 40);*/
+bool Display::IsGL2()
+{
+	int v;
+	SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &v);
+	return v == 2;
+}
 
-   // SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
-
-   // SDL_RenderPresent(sdlRenderer);
+bool Display::IsGL3()
+{
+	int v;
+	SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &v);
+	return v == 3;
 }
 
 glm::tvec2<int> Display::GetWindowSize()

@@ -69,7 +69,7 @@ void Body::Load(const std::string& path)
 
 		const std::string svgPath = (yamlFsPath.parent_path() / svgFilename).string();
 
-		NSVGimageUniquePtr nsvgImage = ResourceLoader::OpenAsSvg(svgPath);
+		std::unique_ptr<NSVGimage, NSVGimage_deleter> nsvgImage = ResourceLoader::OpenAsSvg(svgPath);
 		if (nsvgImage) {
 			LoadImpl(root, *nsvgImage);
 			loaded = true;

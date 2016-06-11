@@ -17,6 +17,11 @@
 
 namespace Gravity {
 
+// Temp fix for windows.h ;(
+#ifdef RGB
+#undef RGB
+#endif
+
 struct RGB {
 	uint8_t r, g, b;
 

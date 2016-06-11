@@ -32,32 +32,11 @@
 
 namespace Gravity {
 
-using boost::optional;
-using boost::none;
-using std::string;
-using std::vector;
-using std::size_t;
-
 static std::string FixPath(const std::string& path)
 {
     std::string s = path;
     std::replace(s.begin(), s.end(), '\\', '/');
     return s;
-}
-
-ResourceLoader::StreamWrapper::StreamWrapper(PHYSFS_File *file)
-    : file(file)
-    , stream(file)
-{}
-
-ResourceLoader::StreamWrapper::~StreamWrapper()
-{
-    PHYSFS_close(file);
-}
-
-PhysFS::ifstream& ResourceLoader::StreamWrapper::operator*()
-{
-    return stream;
 }
 
 void ResourceLoader::Init()
@@ -84,97 +63,66 @@ void ResourceLoader::Init()
     }
 }
 
-optional<ResourceLoader::StreamWrapperPtr> ResourceLoader::OpenAsStream(const std::string& path)
+std::unique_ptr<PhysFS::ifstream> ResourceLoader::OpenAsStream(const std::string& path)
+{
+	PHYSFS_File* file = PHYSFS_openRead(FixPath(path).c_str());
+	if (file) {
+		return std::unique_ptr<PhysFS::ifstream>(new PhysFS::ifstream(file));
+	} else {
+		LOG(error) << "Resource not found: " << path;
+		return nullptr;
+	}
+}
+
+boost::optional<std::vector<std::uint8_t>> ResourceLoader::OpenAsBytes(const std::string& path)
 {
     PHYSFS_File* file = PHYSFS_openRead(FixPath(path).c_str());
     if (file) {
-        return std::make_shared<ResourceLoader::StreamWrapper>(file);
+        size_t fileLength = PHYSFS_fileLength(file);
+        std::vector<uint8_t> data(fileLength);
+
+        PHYSFS_read(file, &data[0], fileLength, 1);
+        PHYSFS_close(file);
+
+        return data;
     } else {
         LOG(error) << "Resource not found: " << path;
         return boost::none;
     }
 }
 
-optional<std::vector<std::uint8_t>> ResourceLoader::OpenAsBytes(const std::string& path)
+boost::optional<YAML::Node> ResourceLoader::OpenAsYaml(const std::string& path)
 {
-    PHYSFS_File* file = PHYSFS_openRead(FixPath(path).c_str());
-    if (file) {
-        size_t fileLength = PHYSFS_fileLength(file);
-        vector<uint8_t> data(fileLength);
+	std::unique_ptr<PhysFS::ifstream> istream = ResourceLoader::OpenAsStream(path);
 
-        PHYSFS_read(file, &data[0], fileLength, 1);
-        PHYSFS_close(file);
-
-        return data;
-    } else {
-        LOG(error) << "Resource not found: " << path;
-        return none;
-    }
-}
-
-optional<YAML::Node> ResourceLoader::OpenAsYaml(const std::string& path)
-{
-	boost::optional<ResourceLoader::StreamWrapperPtr> maybeIStream = ResourceLoader::OpenAsStream(path);
-
-	if (maybeIStream) {
+	if (istream) {
 		try {
-			std::istream& is = ***maybeIStream;
-			return YAML::Load(is);
+			std::istream& is = *istream;
+			return YAML::Load(*istream);
 		}
 		catch (...) {
 			LOG(error) << "Parsing yml file " << path << " failed";
 		}
 	}
 
-	return none;
+	return boost::none;
 }
 
-NSVGimageUniquePtr ResourceLoader::OpenAsSvg(const std::string& path)
+std::unique_ptr<NSVGimage, NSVGimage_deleter> ResourceLoader::OpenAsSvg(const std::string& path)
 {
 	return OpenAsSvg(path, "px", 96);
 }
 
-NSVGimageUniquePtr ResourceLoader::OpenAsSvg(const std::string& path, const std::string& units, float dpi)
+std::unique_ptr<NSVGimage, NSVGimage_deleter> ResourceLoader::OpenAsSvg(const std::string& path, const std::string& units, float dpi)
 {
 	boost::optional<std::vector<uint8_t>> maybeBytes = ResourceLoader::OpenAsBytes(path);
 	if (maybeBytes) {
 		std::vector<uint8_t> bytes = *maybeBytes;
 		bytes.push_back(0);
-		return NSVGimageUniquePtr(nsvgParse((char *)(&bytes[0]), units.c_str(), dpi));
+		return std::unique_ptr<NSVGimage, NSVGimage_deleter>(nsvgParse((char *)(&bytes[0]), units.c_str(), dpi));
 	} else {
 		return nullptr;
 	}
-}
-
-optional<Json::Value> ResourceLoader::LoadJson(const string& key)
-{
-    optional<vector<char> > maybeData = LoadData(key);
-    if (maybeData) {
-        vector<char> data = maybeData.get();
-        Json::Value root;
-        Json::Reader reader;
-        reader.parse(&data.front(), &data.back(), root);
-        return root;
-    } else {
-        return none;
-    }
-}
-
-optional<vector<char> > ResourceLoader::LoadData(const string& key)
-{
-    PHYSFS_File* file = PHYSFS_openRead(key.c_str());
-    if (file) {
-        size_t fileLength = PHYSFS_fileLength(file);
-        vector<char> data(fileLength);
-
-        PHYSFS_read(file, &data[0], fileLength, 1);
-        PHYSFS_close(file);
-
-        return data;
-    } else {
-        LOG(error) << "Resource not found: " << key;
-        return none;
-    }
 }
 
 void ResourceLoader::Deinit()

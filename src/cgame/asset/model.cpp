@@ -59,9 +59,6 @@ void Model::LoadShape(const NSVGshape* shape, const Body::TransformProps& tp)
 		}
 	}
 
-	LOG(trace) << "Color is: " << std::hex << shape->stroke.color << std::dec;
-	
-
 	pathSet.width = shape->strokeWidth;
 	pathSet.color = color;
 	pathSet.paths = ShapeToVectorPaths(shape, tp);

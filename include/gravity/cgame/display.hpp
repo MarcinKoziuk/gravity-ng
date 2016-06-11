@@ -48,8 +48,11 @@ public:
     bool Init();
 	bool Init2();
 
-    SDL_Window* GetWindow()
-    { return window; }
+	bool IsGL2();
+
+	bool IsGL3();
+
+    SDL_Window* GetWindow() { return window; }
 
 	glm::tvec2<int> GetWindowSize();
 };
